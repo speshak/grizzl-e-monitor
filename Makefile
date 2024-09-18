@@ -1,3 +1,5 @@
+APPNAME=grizzl-e-prom
+VERSION?=snapshot
 COMMIT=$(shell git rev-parse --verify HEAD)
 DATE?=$(shell date +%FT%T%z)
 RELEASE?=0
@@ -46,10 +48,6 @@ GOCOVMERGE=$(GOPATH)/bin/gocovmerge
 $(GOCOVMERGE):
 	go install github.com/wadey/gocovmerge@latest
 
-CADDY=$(GOPATH)/bin/caddy
-$(CADDY):
-	cd /tmp; go get github.com/caddyserver/caddy/v2/...
-
 
 .PHONY: start
 start: $(REFLEX)
@@ -61,7 +59,8 @@ start: $(REFLEX)
 
 .PHONY: build
 build:
-	go build -trimpath $(GO_LDFLAGS) -o ./build/$(APPNAME)
+	mkdir -p build
+	go build -trimpath $(GO_LDFLAGS) -o ./build/$(APPNAME)  cmd/main.go
 
 .PHONY: lint
 lint: $(GOLANGCILINT)
