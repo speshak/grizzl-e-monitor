@@ -2,7 +2,14 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"net/http"
 	"os"
+
+	"github.com/prometheus/client_golang/prometheus/collectors"
+
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 // Config holds the configuration values
@@ -44,4 +51,18 @@ func main() {
 	}
 
 	fmt.Printf("Config loaded: %+v\n", config)
+	reg := prometheus.NewRegistry()
+
+	// Add go runtime metrics and process collectors.
+	reg.MustRegister(
+		collectors.NewGoCollector(),
+		collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}),
+	)
+
+	// Start monitoring stations
+	go monitorStations()
+
+	// Expose /metrics HTTP endpoint using the created custom registry.
+	http.Handle("/metrics", promhttp.HandlerFor(reg, promhttp.HandlerOpts{Registry: reg}))
+	log.Fatal(http.ListenAndServe(":8080", nil))
 }
