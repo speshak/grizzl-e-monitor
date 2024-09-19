@@ -70,8 +70,17 @@ func (c *ConnectAPI) GetStations() ([]Station, error) {
 	return result, nil
 }
 
-func (c *ConnectAPI) GetStation(id string) {
+func (c *ConnectAPI) GetStation(id string) (Station, error) {
 	client := c.client()
-	client.R().
+	result := Station{}
+
+	_, err := client.R().
+		SetResult(&result).
 		Get("/client/stations/" + id)
+
+	if err != nil {
+		return Station{}, err
+	}
+
+	return result, nil
 }
