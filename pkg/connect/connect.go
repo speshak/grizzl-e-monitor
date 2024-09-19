@@ -84,3 +84,20 @@ func (c *ConnectAPI) GetStation(id string) (Station, error) {
 
 	return result, nil
 }
+
+func (c *ConnectAPI) GetTransactionStatistics(stationId string) (TransactionStats, error) {
+	client := c.client()
+	result := TransactionStats{}
+
+	_, err := client.R().
+		SetResult(&result).
+		SetQueryString("stationId=" + stationId).
+		SetResult(&result).
+		Get("/client/transactions/statistics")
+
+	if err != nil {
+		return TransactionStats{}, err
+	}
+
+	return result, nil
+}

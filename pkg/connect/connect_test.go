@@ -98,3 +98,35 @@ func TestGetStation(t *testing.T) {
 	assert.Nil(t, err, "Error should be nil")
 	assert.Equal(t, stationResp.ID, resp.ID, "Station ID should match")
 }
+
+func TestTransactionStats(t *testing.T) {
+	c := NewConnectAPI("myUser", "myPassword", "https://example.com")
+	httpmock.ActivateNonDefault(c.Client.GetClient())
+
+	// Fake token
+	c.Token = "deadbeef"
+
+	statsResp := TransactionStats{
+		Sessions:      10,
+		AverageEnergy: 19384.19,
+		Duration:      10394,
+		TopSession:    19482,
+		Currency:      "USD",
+	}
+
+	httpmock.RegisterResponder("GET", "https://example.com/client/transactions/statistics",
+		func(req *http.Request) (*http.Response, error) {
+			resp, err := httpmock.NewJsonResponse(200, statsResp)
+			if err != nil {
+				return httpmock.NewStringResponse(500, ""), nil
+			}
+			return resp, nil
+		},
+	)
+
+	resp, err := c.GetTransactionStatistics("station1")
+
+	assert.Nil(t, err, "Error should be nil")
+	assert.Equal(t, statsResp.Sessions, resp.Sessions, "Sessions should match")
+	assert.Equal(t, statsResp.Duration, resp.Duration, "Duration should match")
+}

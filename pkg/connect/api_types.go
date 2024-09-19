@@ -70,3 +70,12 @@ type Station struct {
 	PriceKW      float64     `json:"priceKW"`
 	// There are a load more fields in the response, but we only need these for now
 }
+
+type TransactionStats struct {
+	TotalEnergy   int     `json:"totalEnergy"`
+	Sessions      int     `json:"sessions"`
+	AverageEnergy float64 `json:"averageEnergy"`
+	Duration      int     `json:"duration"`
+	TopSession    int     `json:"topSession"`
+	Currency      string  `json:"currency"`
+}
