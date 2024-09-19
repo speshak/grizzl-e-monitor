@@ -6,6 +6,7 @@ WORKDIR /app
 # Copies everything from your root directory into /app
 COPY . .
  
+RUN apk add --no-cache make
 RUN make build
  
 
