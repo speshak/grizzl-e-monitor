@@ -1,6 +1,6 @@
 module github.com/speshak/grizzl-e-prom
 
-require github.com/go-resty/resty/v2 v2.15.1
+require github.com/go-resty/resty/v2 v2.15.2
 
 require (
 	github.com/jarcoal/httpmock v1.3.1
