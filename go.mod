@@ -3,10 +3,11 @@ module github.com/speshak/grizzl-e-prom
 require github.com/go-resty/resty/v2 v2.15.1
 
 require (
+	github.com/golang-jwt/jwt/v4 v4.5.0
+	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/jarcoal/httpmock v1.3.1
 	github.com/prometheus/client_golang v1.20.4
 	github.com/stretchr/testify v1.9.0
-	github.com/golang-jwt/jwt/v4 v4.5.0
 )
 
 require (
