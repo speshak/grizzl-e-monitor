@@ -3,20 +3,43 @@ package connect
 import (
 	"fmt"
 	"log"
+	"strconv"
+	"time"
 
 	"github.com/go-resty/resty/v2"
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 // A Connect API client
-type ConnectAPI struct {
+type ConnectAPI interface {
+	SetDebug()
+	AssertValidToken() error
+	Login() error
+	Logout() error
+	GetStations() ([]Station, error)
+	GetStation(id string) (Station, error)
+	GetTransactionStatistics(stationId string) (TransactionStats, error)
+	GetAllTransactions(stationId string) ([]Transaction, error)
+	GetTransactions(stationId string, limit int, offset int) ([]Transaction, error)
+	GetTransaction(id string) (Transaction, error)
+}
+
+type ConnectAPIClient struct {
 	Username string
 	Password string
 	Token    string
 	Client   *resty.Client
+	PageSize int
 }
 
-func NewConnectAPI(username, password, host string) *ConnectAPI {
+type TokenClaims struct {
+	jwt.RegisteredClaims
+	Iat           int64  `json:"iat"`
+	UserId        string `json:"userId"`
+	UserSessionId string `json:"userSessionId"`
+}
+
+func NewConnectAPI(username, password, host string) *ConnectAPIClient {
 	client := resty.New()
 	client.
 		EnableTrace().
@@ -27,34 +50,35 @@ func NewConnectAPI(username, password, host string) *ConnectAPI {
 		SetHeader("x-app-version", "v0.8.0 (87)").
 		SetHeader("x-application-name", "Grizzl-E Connect")
 
-	return &ConnectAPI{
+	return &ConnectAPIClient{
 		Username: username,
 		Password: password,
 		Client:   client,
+		PageSize: 10,
 	}
 }
 
 // Enable debug mode in the underlying resty client
-func (c *ConnectAPI) SetDebug() {
+func (c *ConnectAPIClient) SetDebug() {
 	c.Client = c.Client.SetDebug(true)
 }
 
 // Ensure the login token is valid
-func (c *ConnectAPI) AssertValidToken() error {
-	jwtToken, err := jwt.Parse(c.Token, func(token *jwt.Token) (interface{}, error) {
-		// Since we are not verifying the token, return nil
-		return nil, nil
-	})
+func (c *ConnectAPIClient) AssertValidToken() error {
+	parser := jwt.NewParser()
+	claims := TokenClaims{}
 
-	if err != nil {
+	// We don't need to verify the token, just parse it
+	jwtToken, _, err := parser.ParseUnverified(c.Token, &claims)
+
+	// We only care about the error if we have a token
+	if err != nil && c.Token != "" {
 		log.Printf("Error parsing token: %s", err)
+		log.Printf("Token: %s", c.Token)
 	}
 
-	fmt.Println(jwtToken)
-	// TODO: Check if the token is expired and re-login if needed
-
-	if jwtToken == nil || !jwtToken.Valid {
-		log.Println("No token set, logging in")
+	if jwtToken == nil || !jwtToken.Valid || IsExpired(claims.ExpiresAt) {
+		log.Println("No valid token, logging in")
 		err := c.Login()
 		if err != nil {
 			log.Fatalf("Error logging in: %s", err)
@@ -64,16 +88,22 @@ func (c *ConnectAPI) AssertValidToken() error {
 	return nil
 }
 
+// Check if a token is expired
+func IsExpired(expires *jwt.NumericDate) bool {
+	// Include a 30 second buffer to account for clock skew
+	return time.Until(expires.Time) < 30*time.Second
+}
+
 // Get a resty client with the auth token set
 // This will log in if no token is set or the token is expired
-func (c *ConnectAPI) client() *resty.Client {
+func (c *ConnectAPIClient) client() *resty.Client {
 	c.AssertValidToken()
 
 	return c.Client.
 		SetAuthToken(c.Token)
 }
 
-func (c *ConnectAPI) Login() error {
+func (c *ConnectAPIClient) Login() error {
 	// Get login token for future requests
 	log.Printf("Logging in as %s", c.Username)
 	result := LoginResponse{}
@@ -100,12 +130,13 @@ func (c *ConnectAPI) Login() error {
 	return fmt.Errorf("error logging in: %s", errorResult.Message.Message)
 }
 
-func (c *ConnectAPI) Logout() {
+func (c *ConnectAPIClient) Logout() error {
 	// TODO: Call the logout endpoint to invalidate the tokens
 	c.Token = ""
+	return nil
 }
 
-func (c *ConnectAPI) GetStations() ([]Station, error) {
+func (c *ConnectAPIClient) GetStations() ([]Station, error) {
 	log.Println("Getting stations")
 	client := c.client()
 	result := GetStationsResponse{}
@@ -121,7 +152,7 @@ func (c *ConnectAPI) GetStations() ([]Station, error) {
 	return result.Stations, nil
 }
 
-func (c *ConnectAPI) GetStation(id string) (Station, error) {
+func (c *ConnectAPIClient) GetStation(id string) (Station, error) {
 	log.Printf("Getting station %s", id)
 	client := c.client()
 	result := Station{}
@@ -137,7 +168,7 @@ func (c *ConnectAPI) GetStation(id string) (Station, error) {
 	return result, nil
 }
 
-func (c *ConnectAPI) GetTransactionStatistics(stationId string) (TransactionStats, error) {
+func (c *ConnectAPIClient) GetTransactionStatistics(stationId string) (TransactionStats, error) {
 	log.Printf("Getting transaction statistics for station %s", stationId)
 	client := c.client()
 	result := TransactionStats{}
@@ -150,6 +181,66 @@ func (c *ConnectAPI) GetTransactionStatistics(stationId string) (TransactionStat
 
 	if err != nil {
 		return TransactionStats{}, err
+	}
+
+	return result, nil
+}
+
+func (c *ConnectAPIClient) GetAllTransactions(stationId string) ([]Transaction, error) {
+	log.Printf("Getting all transactions for station %s", stationId)
+	var transactions []Transaction
+
+	offset := 0
+
+	// Get pages of transactions until we get back less than the limit
+	for {
+		page, err := c.GetTransactions(stationId, c.PageSize, offset)
+
+		if err != nil {
+			return transactions, err
+		}
+		transactions = append(transactions, page...)
+
+		if len(page) < c.PageSize {
+			return transactions, nil
+		}
+		offset++
+	}
+}
+
+// Get a single page of transactions, defined by the limit and offset
+func (c *ConnectAPIClient) GetTransactions(stationId string, limit int, offset int) ([]Transaction, error) {
+	log.Printf("Getting transactions for station %s", stationId)
+	client := c.client()
+	result := GetTransactionsResponse{}
+
+	_, err := client.R().
+		SetQueryParams(map[string]string{
+			"stationId": stationId,
+			"limit":     strconv.Itoa(limit),
+			"offset":    strconv.Itoa(offset),
+		}).
+		SetResult(&result).
+		Get("/client/transactions")
+
+	if err != nil {
+		return nil, err
+	}
+
+	return result.Transactions, nil
+}
+
+func (c *ConnectAPIClient) GetTransaction(id string) (Transaction, error) {
+	log.Printf("Getting transaction %s", id)
+	client := c.client()
+	result := Transaction{}
+
+	_, err := client.R().
+		SetResult(&result).
+		Get("/client/transactions/" + id)
+
+	if err != nil {
+		return Transaction{}, err
 	}
 
 	return result, nil

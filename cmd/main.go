@@ -7,18 +7,13 @@ import (
 	"os"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/speshak/grizzl-e-prom/internal/influx"
+	"github.com/speshak/grizzl-e-prom/internal/monitor"
+	"github.com/speshak/grizzl-e-prom/internal/prometheus"
 )
 
-// Config holds the configuration values
-type Config struct {
-	APIHost  string
-	Username string
-	Password string
-	Debug    bool
-}
-
 // LoadConfig loads configuration from environment variables
-func LoadConfig() (*Config, error) {
+func LoadConfig() (*monitor.Config, error) {
 	apiHost := os.Getenv("GRIZZLE_CONNECT_API_URL")
 	if apiHost == "" {
 		apiHost = "https://connect-api.unitedchargers.com"
@@ -39,11 +34,13 @@ func LoadConfig() (*Config, error) {
 		debug = "false"
 	}
 
-	return &Config{
-		APIHost:  apiHost,
-		Username: username,
-		Password: password,
-		Debug:    debug == "true",
+	return &monitor.Config{
+		APIHost:     apiHost,
+		Username:    username,
+		Password:    password,
+		InfluxHost:  os.Getenv("INFLUX_HOST"),
+		InfluxToken: os.Getenv("INFLUX_TOKEN"),
+		Debug:       debug == "true",
 	}, nil
 }
 
@@ -55,7 +52,15 @@ func main() {
 	}
 
 	// Start monitoring stations
-	go MonitorStations(config)
+	monitor := monitor.NewStationMonitor(config)
+
+	prom := prometheus.NewPrometheusPublisher()
+	influx := influx.NewInfluxPublisher(config.InfluxHost, config.InfluxToken)
+
+	monitor.TransactionHistoryPublisher = influx
+	monitor.TransactionStatsPublisher = prom
+	monitor.StationStatusPublisher = prom
+	go monitor.MonitorStations()
 
 	// Expose /metrics HTTP endpoint using the created custom registry.
 	http.Handle("/metrics", promhttp.Handler())

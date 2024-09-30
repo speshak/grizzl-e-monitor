@@ -60,7 +60,7 @@ start: $(REFLEX)
 .PHONY: build
 build:
 	mkdir -p build
-	go build -trimpath $(GO_LDFLAGS) -o ./build/$(APPNAME)  cmd/main.go cmd/monitor.go
+	go build -trimpath $(GO_LDFLAGS) -o ./build/$(APPNAME)  cmd/main.go
 
 .PHONY: lint
 lint: $(GOLANGCILINT)
@@ -116,11 +116,6 @@ start-docker: check-default-ports
 check-default-ports:
 	@lsof -i:8080 > /dev/null && (echo "Port 8080 already in use"; exit 1) || true
 	@lsof -i:8081 > /dev/null && (echo "Port 8081 already in use"; exit 1) || true
-
-.PHONY: optimize
-optimize:
-	find client/assets/ -iname '*.png' -print0 | xargs -0 -n1 optipng -strip all
-	find docs/ -iname '*.png' -print0 | xargs -0 -n1 optipng -strip all
 
 # The following targets are only available for CI usage
 .PHONY: deploy-docker

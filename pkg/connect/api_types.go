@@ -1,5 +1,7 @@
 package connect
 
+import "time"
+
 // A message from the Connect API. This is used in error responses.
 type ApiMessage struct {
 	StatusCode int    `json:"statusCode"`
@@ -33,36 +35,37 @@ type LoginResponse struct {
 }
 
 type MeterValues struct {
-	Date                       []string  `json:"date"`
-	CurrentImport              []float64 `json:"currentImport"`
-	CurrentOffered             []float64 `json:"currentOffered"`
-	EnergyActiveImportRegister []int     `json:"energyActiveImportRegister"`
-	PowerActiveImport          []float64 `json:"powerActiveImport"`
-	SoC                        []int     `json:"SoC"`
-	Temperature                []float64 `json:"temperature"`
-	Voltage                    []int     `json:"voltage"`
+	Date                       []time.Time `json:"date"`
+	CurrentImport              []float64   `json:"currentImport"`
+	CurrentOffered             []float64   `json:"currentOffered"`
+	EnergyActiveImportRegister []int       `json:"energyActiveImportRegister"`
+	PowerActiveImport          []float64   `json:"powerActiveImport"`
+	SoC                        []int       `json:"SoC"`
+	Temperature                []float64   `json:"temperature"`
+	Voltage                    []int       `json:"voltage"`
 }
 
 type Transaction struct {
-	ID               string  `json:"_id"`
-	User             string  `json:"user"`
-	Station          string  `json:"station"`
-	IdTag            string  `json:"idTag"`
-	ConnectorId      int     `json:"connectorId"`
-	StartAt          string  `json:"startAt"`
-	Duration         int     `json:"duration"`
-	Energy           int     `json:"energy"`
-	Status           int     `json:"status"`
-	Power            int     `json:"power"`
-	Currency         string  `json:"currency"`
-	PriceKW          float64 `json:"priceKW"`
-	PriceTotal       float64 `json:"priceTotal"`
-	MeterStart       int     `json:"meterStart"`
-	MeterStop        int     `json:"meterStop"`
-	StopAt           string  `json:"stopAt"`
-	StopReason       string  `json:"stopReason"`
-	AverageCurrent   float64 `json:"averageCurrent"`
-	ChargingDuration int     `json:"chargingDuration"`
+	ID               string      `json:"_id"`
+	User             string      `json:"user"`
+	Station          string      `json:"station"`
+	IdTag            string      `json:"idTag"`
+	ConnectorId      int         `json:"connectorId"`
+	StartAt          string      `json:"startAt"`
+	Duration         int         `json:"duration"`
+	Energy           int         `json:"energy"`
+	Status           int         `json:"status"`
+	Power            int         `json:"power"`
+	Currency         string      `json:"currency"`
+	PriceKW          float64     `json:"priceKW"`
+	PriceTotal       float64     `json:"priceTotal"`
+	MeterStart       int         `json:"meterStart"`
+	MeterStop        int         `json:"meterStop"`
+	StopAt           string      `json:"stopAt"`
+	StopReason       string      `json:"stopReason"`
+	AverageCurrent   float64     `json:"averageCurrent"`
+	ChargingDuration int         `json:"chargingDuration"`
+	MeterValues      MeterValues `json:"meterValues"`
 }
 
 type Connector struct {
@@ -100,4 +103,8 @@ type TransactionStats struct {
 	Duration      int     `json:"duration"`
 	TopSession    int     `json:"topSession"`
 	Currency      string  `json:"currency"`
+}
+
+type GetTransactionsResponse struct {
+	Transactions []Transaction `json:"data"`
 }
