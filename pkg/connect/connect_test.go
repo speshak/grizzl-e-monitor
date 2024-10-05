@@ -24,7 +24,7 @@ func TestLogin(t *testing.T) {
 
 	err := c.Login()
 
-	assert.Nil(t, err, "Error should be nil")
+	assert.NoError(t, err, "Error should be nil")
 	assert.NotEmpty(t, c.Token, "Token should not be empty")
 }
 
@@ -49,7 +49,7 @@ func TestGetStations(t *testing.T) {
 
 	resp, err := c.GetStations()
 
-	assert.Nil(t, err, "Error should be nil")
+	assert.NoError(t, err, "Error should be nil")
 	assert.Len(t, resp, 1, "Response should have 1 station")
 	assert.Equal(t, "station1", resp[0].ID, "Station ID should match")
 	assert.Equal(t, "online", resp[0].Status, "Station Status should match")
@@ -64,14 +64,14 @@ func TestGetStation(t *testing.T) {
 	c.Token = "deadbeef"
 
 	resp, err := c.GetStation("station1")
-	assert.Nil(t, err, "Error should be nil")
+	assert.NoError(t, err, "Error should be nil")
 	assert.Equal(t, "station1", resp.ID, "Station ID should match")
 
 	resp, err = c.GetStation("missing")
-	assert.Nil(t, err, "Error should be nil")
+	assert.NoError(t, err, "Error should be nil")
 
 	resp, err = c.GetStation("errstation")
-	assert.Nil(t, err, "Error should be nil")
+	assert.NoError(t, err, "Error should be nil")
 }
 
 func TestTransactionStats(t *testing.T) {
@@ -101,7 +101,7 @@ func TestTransactionStats(t *testing.T) {
 
 	resp, err := c.GetTransactionStatistics("station1")
 
-	assert.Nil(t, err, "Error should be nil")
+	assert.NoError(t, err, "Error should be nil")
 	assert.Equal(t, statsResp.Sessions, resp.Sessions, "Sessions should match")
 	assert.Equal(t, statsResp.Duration, resp.Duration, "Duration should match")
 }
@@ -124,7 +124,7 @@ func TestTransactionPage(t *testing.T) {
 
 	resp, err := c.GetTransactions("station1", 2, 0)
 
-	assert.Nil(t, err, "Error should be nil")
+	assert.NoError(t, err, "Error should be nil")
 	assert.Equal(t, 2, len(resp), "Response should have 2 transactions")
 }
 
@@ -135,7 +135,7 @@ func TestAllTransactions(t *testing.T) {
 	c.PageSize = 2
 	resp, err := c.GetAllTransactions("station1")
 
-	assert.Nil(t, err, "Error should be nil")
+	assert.NoError(t, err, "Error should be nil")
 	assert.Equal(t, 4, len(resp), "Response should have 4 transactions")
 }
 
@@ -145,6 +145,35 @@ func TestSingleTransaction(t *testing.T) {
 
 	resp, err := c.GetTransaction("transaction1")
 
-	assert.Nil(t, err, "Error should be nil")
+	assert.NoError(t, err, "Error should be nil")
 	assert.Equal(t, "transaction1", resp.ID, "Transaction should have requested ID")
+}
+
+func TestSingleBadTransaction(t *testing.T) {
+	c := NewConnectAPI("myUser", "myPassword", "https://example.com")
+	httpmock.ActivateNonDefault(c.Client.GetClient())
+
+	_, err := c.GetTransaction("bogusId")
+
+	assert.Error(t, err, "Error should not be nil")
+}
+
+func TestLogout(t *testing.T) {
+	c := NewConnectAPI("myUser", "myPassword", "https://example.com")
+	httpmock.ActivateNonDefault(c.Client.GetClient())
+
+	// Login first
+	c.Login()
+	assert.NotEmpty(t, c.Token, "Token should not be empty")
+
+	c.Logout()
+	assert.Empty(t, c.Token, "Token should be empty after logout")
+}
+
+func TestSetDebug(t *testing.T) {
+	c := NewConnectAPI("myUser", "myPassword", "https://example.com")
+
+	assert.False(t, c.Client.Debug, "Debug should be false")
+	c.SetDebug()
+	assert.True(t, c.Client.Debug, "Debug should be true")
 }

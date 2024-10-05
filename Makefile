@@ -44,11 +44,6 @@ VENOM=$(GOPATH)/bin/venom
 $(VENOM):
 	go install github.com/ovh/venom/cmd/venom@$(VENOMVERSION)
 
-GOCOVMERGE=$(GOPATH)/bin/gocovmerge
-$(GOCOVMERGE):
-	go install github.com/wadey/gocovmerge@latest
-
-
 .PHONY: start
 start: $(REFLEX)
 	$(REFLEX) --start-service \
@@ -73,31 +68,14 @@ format:
 .PHONY: test
 test:
 	mkdir -p coverage
-	go test -v -race -coverprofile=coverage/test-cover.out ./server/...
+	go test -v -race -coverprofile=coverage/cover.out ./pkg/... ./internal/...
 
-PID_FILE=/tmp/$(APPNAME).test.pid
-.PHONY: test-integration
-test-integration: $(VENOM) check-default-ports
-	mkdir -p coverage
-	go test -race -coverpkg="./..." -c . -o $(APPNAME).test
-	./$(APPNAME).test -test.coverprofile=coverage/test-integration-cover.out >/dev/null 2>&1 & echo $$! > $(PID_FILE)
-	sleep 5
-	$(VENOM) run tests/features/$(SUITE)
-	kill `cat $(PID_FILE)` 2> /dev/null || true
-
-.PHONY: start-integration
-start-integration: $(VENOM)
-	$(VENOM) run tests/features/$(SUITE)
-
-coverage/test-cover.out:
+coverage/cover.out:
 	$(MAKE) test
 
-coverage/test-integration-cover.out:
-	$(MAKE) test-integration
-
 .PHONY: coverage
-coverage: $(GOCOVMERGE) coverage/test-cover.out coverage/test-integration-cover.out
-	$(GOCOVMERGE) coverage/test-cover.out coverage/test-integration-cover.out > coverage/cover.out
+coverage: coverage/cover.out
+	go tool cover -html=./coverage/cover.out
 
 .PHONY: clean
 clean:
