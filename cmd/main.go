@@ -13,11 +13,16 @@ import (
 	"github.com/speshak/grizzl-e-monitor/internal/prometheus"
 )
 
+// Default values for paramters
+const DefaultConnectApiHost = "https://connect-api.unitedchargers.com"
+const DefaultInfluxOrg = "default"
+const DefaultInfluxBucket = "default"
+
 // LoadConfig loads configuration from environment variables
 func LoadConfig() (*monitor.Config, *influx.InfluxConfig, error) {
 	apiHost := os.Getenv("GRIZZLE_CONNECT_API_URL")
 	if apiHost == "" {
-		apiHost = "https://connect-api.unitedchargers.com"
+		apiHost = DefaultConnectApiHost
 	}
 
 	username := os.Getenv("GRIZZLE_CONNECT_API_USERNAME")
@@ -64,12 +69,12 @@ func LoadInfluxConfig() (*influx.InfluxConfig, error) {
 
 	org := os.Getenv("INFLUX_ORG")
 	if org == "" {
-		org = "default"
+		org = DefaultInfluxOrg
 	}
 
 	bucket := os.Getenv("INFLUX_BUCKET")
 	if bucket == "" {
-		bucket = "default"
+		bucket = DefaultInfluxBucket
 	}
 
 	return &influx.InfluxConfig{

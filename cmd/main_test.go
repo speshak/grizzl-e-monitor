@@ -47,6 +47,29 @@ func TestLoadConfig_MissingPassword(t *testing.T) {
 	assert.Nil(t, influxConfig)
 }
 
+func TestLoadConfig_MissingAPIHost(t *testing.T) {
+	os.Unsetenv("GRIZZLE_CONNECT_API_URL")
+	os.Setenv("GRIZZLE_CONNECT_API_USERNAME", "testuser")
+	os.Setenv("GRIZZLE_CONNECT_API_PASSWORD", "testpass")
+	os.Setenv("GRIZZLE_CONNECT_DEBUG", "true")
+
+	config, _, err := LoadConfig()
+	assert.NoError(t, err)
+	// Check that we used the default host
+	assert.Equal(t, DefaultConnectApiHost, config.APIHost)
+}
+
+func TestLoadConfig_MissingDebug(t *testing.T) {
+	os.Setenv("GRIZZLE_CONNECT_API_URL", "https://test-api.com")
+	os.Setenv("GRIZZLE_CONNECT_API_USERNAME", "testuser")
+	os.Setenv("GRIZZLE_CONNECT_API_PASSWORD", "testpass")
+	os.Unsetenv("GRIZZLE_CONNECT_DEBUG")
+
+	config, _, err := LoadConfig()
+	assert.NoError(t, err)
+	assert.False(t, config.Debug)
+}
+
 func TestLoadInfluxConfig(t *testing.T) {
 	os.Setenv("INFLUX_HOST", "http://test-influx.com")
 	os.Setenv("INFLUX_TOKEN", "testtoken")
@@ -71,4 +94,26 @@ func TestLoadInfluxConfig_MissingToken(t *testing.T) {
 	influxConfig, err := LoadInfluxConfig()
 	assert.Error(t, err)
 	assert.Nil(t, influxConfig)
+}
+
+func TestLoadInfluxConfig_MissingOrg(t *testing.T) {
+	os.Setenv("INFLUX_HOST", "http://test-influx.com")
+	os.Setenv("INFLUX_TOKEN", "testtoken")
+	os.Setenv("INFLUX_BUCKET", "testbucket")
+	os.Unsetenv("INFLUX_ORG")
+
+	influxConfig, err := LoadInfluxConfig()
+	assert.NoError(t, err)
+	assert.Equal(t, DefaultInfluxOrg, influxConfig.Org)
+}
+
+func TestLoadInfluxConfig_MissingBucket(t *testing.T) {
+	os.Setenv("INFLUX_HOST", "http://test-influx.com")
+	os.Setenv("INFLUX_TOKEN", "testtoken")
+	os.Setenv("INFLUX_ORG", "testorg")
+	os.Unsetenv("INFLUX_BUCKET")
+
+	influxConfig, err := LoadInfluxConfig()
+	assert.NoError(t, err)
+	assert.Equal(t, DefaultInfluxBucket, influxConfig.Bucket)
 }
