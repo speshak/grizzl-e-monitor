@@ -1,0 +1,14 @@
+---
+linters:
+  enable:
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - testifylint
+    - unused
+
+linters-settings:
+  testifylint:
+    enable-all: true

@@ -38,7 +38,7 @@ GOTESTCOVERAGE=$(GOPATH)/bin/go-test-coverage
 $(GOTESTCOVERAGE):
 	go install github.com/vladopajic/go-test-coverage/v2@latest
 
-GOLANGCILINTVERSION:=1.54.2
+GOLANGCILINTVERSION:=1.61.0
 GOLANGCILINT=$(GOPATH)/bin/golangci-lint
 $(GOLANGCILINT):
 	curl -fsSL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(GOPATH)/bin v$(GOLANGCILINTVERSION)
@@ -55,7 +55,6 @@ build:
 
 .PHONY: lint
 lint: $(GOLANGCILINT) $(TESTIFYLINT)
-	$(TESTIFYLINT) ./...
 	$(GOLANGCILINT) run
 
 .PHONY: format

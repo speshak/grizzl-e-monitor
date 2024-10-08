@@ -106,7 +106,15 @@ func main() {
 	monitor.StationStatusPublisher = prom
 
 	ctx := context.Background()
-	go monitor.MonitorStations(ctx)
+	errs := make(chan error, 1)
+	go func() {
+		errs <- monitor.MonitorStations(ctx)
+	}()
+
+	// Handle any errors
+	if err := <-errs; err != nil {
+		log.Fatal(err)
+	}
 
 	// Expose /metrics HTTP endpoint using the created custom registry.
 	http.Handle("/metrics", promhttp.Handler())

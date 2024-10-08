@@ -174,10 +174,12 @@ func TestLogout(t *testing.T) {
 	httpmock.ActivateNonDefault(c.Client.GetClient())
 
 	// Login first
-	c.Login()
+	err := c.Login()
+	require.NoError(t, err, "Error should be nil")
 	assert.NotEmpty(t, c.Token, "Token should not be empty")
 
-	c.Logout()
+	err = c.Logout()
+	require.NoError(t, err, "Error should be nil")
 	assert.Empty(t, c.Token, "Token should be empty after logout")
 }
 

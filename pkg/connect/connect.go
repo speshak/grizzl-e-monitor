@@ -105,11 +105,15 @@ func IsExpired(expires *jwt.NumericDate) bool {
 
 // Get a resty client with the auth token set
 // This will log in if no token is set or the token is expired
-func (c *ConnectAPIClient) client() *resty.Client {
-	c.AssertValidToken()
+func (c *ConnectAPIClient) client() (*resty.Client, error) {
+	err := c.AssertValidToken()
+
+	if err != nil {
+		return nil, err
+	}
 
 	return c.Client.
-		SetAuthToken(c.Token)
+		SetAuthToken(c.Token), nil
 }
 
 func (c *ConnectAPIClient) Login() error {
@@ -151,10 +155,13 @@ func (c *ConnectAPIClient) Logout() error {
 
 func (c *ConnectAPIClient) GetStations() ([]Station, error) {
 	log.Println("Getting stations")
-	client := c.client()
+	client, err := c.client()
+	if err != nil {
+		return nil, err
+	}
 	result := GetStationsResponse{}
 
-	_, err := client.R().
+	_, err = client.R().
 		SetResult(&result).
 		Get("/client/stations")
 
@@ -167,10 +174,14 @@ func (c *ConnectAPIClient) GetStations() ([]Station, error) {
 
 func (c *ConnectAPIClient) GetStation(id string) (Station, error) {
 	log.Printf("Getting station %s", id)
-	client := c.client()
+	client, err := c.client()
+
+	if err != nil {
+		return Station{}, err
+	}
 	result := Station{}
 
-	_, err := client.R().
+	_, err = client.R().
 		SetResult(&result).
 		Get("/client/stations/" + id)
 
@@ -183,10 +194,14 @@ func (c *ConnectAPIClient) GetStation(id string) (Station, error) {
 
 func (c *ConnectAPIClient) GetTransactionStatistics(stationId string) (TransactionStats, error) {
 	log.Printf("Getting transaction statistics for station %s", stationId)
-	client := c.client()
+	client, err := c.client()
+	if err != nil {
+		return TransactionStats{}, err
+	}
+
 	result := TransactionStats{}
 
-	_, err := client.R().
+	_, err = client.R().
 		SetResult(&result).
 		SetQueryString("stationId=" + stationId).
 		SetResult(&result).
@@ -224,10 +239,15 @@ func (c *ConnectAPIClient) GetAllTransactions(stationId string) ([]Transaction, 
 // Get a single page of transactions, defined by the limit and offset
 func (c *ConnectAPIClient) GetTransactions(stationId string, limit int, offset int) ([]Transaction, error) {
 	log.Printf("Getting transactions for station %s", stationId)
-	client := c.client()
+	client, err := c.client()
+
+	if err != nil {
+		return nil, err
+	}
+
 	result := GetTransactionsResponse{}
 
-	_, err := client.R().
+	_, err = client.R().
 		SetQueryParams(map[string]string{
 			"stationId": stationId,
 			"limit":     strconv.Itoa(limit),
@@ -245,10 +265,13 @@ func (c *ConnectAPIClient) GetTransactions(stationId string, limit int, offset i
 
 func (c *ConnectAPIClient) GetTransaction(id string) (Transaction, error) {
 	log.Printf("Getting transaction %s", id)
-	client := c.client()
+	client, err := c.client()
+	if err != nil {
+		return Transaction{}, err
+	}
 	result := GetTransactionResponse{}
 
-	_, err := client.R().
+	_, err = client.R().
 		SetResult(&result).
 		Get("/client/transactions/" + id)
 

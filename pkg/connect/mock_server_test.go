@@ -71,9 +71,12 @@ func SetupHTTPMock() {
 	httpmock.RegisterResponder("POST", "https://example.com/client/auth/login",
 		func(req *http.Request) (*http.Response, error) {
 			buf := new(strings.Builder)
-			io.Copy(buf, req.Body)
+			_, err := io.Copy(buf, req.Body)
 
-			var err error
+			if err != nil {
+				panic(err)
+			}
+
 			var resp *http.Response
 
 			if strings.Contains(buf.String(), "bad") {
