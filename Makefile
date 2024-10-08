@@ -30,9 +30,13 @@ SUITE=*.yml
 .PHONY: default
 default: start
 
-REFLEX=$(GOPATH)/bin/reflex
-$(REFLEX):
-	go install github.com/cespare/reflex@latest
+TESTIFYLINT=$(GOPATH)/bin/testifylint
+$(TESTIFYLINT):
+	go install github.com/Antonboom/testifylint@latest
+
+GOTESTCOVERAGE=$(GOPATH)/bin/go-test-coverage
+$(GOTESTCOVERAGE):
+	go install github.com/vladopajic/go-test-coverage/v2@latest
 
 GOLANGCILINTVERSION:=1.54.2
 GOLANGCILINT=$(GOPATH)/bin/golangci-lint
@@ -44,21 +48,14 @@ VENOM=$(GOPATH)/bin/venom
 $(VENOM):
 	go install github.com/ovh/venom/cmd/venom@$(VENOMVERSION)
 
-.PHONY: start
-start: $(REFLEX)
-	$(REFLEX) --start-service \
-		--decoration='none' \
-		--regex='\.go$$' \
-		--inverse-regex='^vendor|node_modules|.cache/' \
-		-- go run $(GO_LDFLAGS) main.go --log-level=$(LEVEL) --static-files ./build/client
-
 .PHONY: build
 build:
 	mkdir -p build
 	go build -trimpath $(GO_LDFLAGS) -o ./build/$(APPNAME)  cmd/main.go
 
 .PHONY: lint
-lint: $(GOLANGCILINT)
+lint: $(GOLANGCILINT) $(TESTIFYLINT)
+	$(TESTIFYLINT) ./...
 	$(GOLANGCILINT) run
 
 .PHONY: format
@@ -67,19 +64,19 @@ format:
 
 .PHONY: test
 test:
-	mkdir -p coverage
-	go test -v -race -coverprofile=coverage/cover.out ./...
+	go test -v -race -coverprofile=cover.out ./...
 
-coverage/cover.out:
+cover.out:
 	$(MAKE) test
 
 .PHONY: coverage
-coverage: coverage/cover.out
-	go tool cover -html=./coverage/cover.out
+coverage: cover.out $(GOTESTCOVERAGE)
+	$(GOTESTCOVERAGE) --config=./.testcoverage.yml
+	go tool cover -html=./cover.out
 
 .PHONY: clean
 clean:
-	rm -rf ./build ./coverage
+	rm -rf ./build
 
 .PHONY: build-docker
 build-docker:

@@ -8,6 +8,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestConstruct(t *testing.T) {
@@ -22,7 +23,7 @@ func TestParseToken(t *testing.T) {
 	c.Token = CreateToken(false)
 	token, claims, err := c.ParseToken()
 
-	assert.NoError(t, err, "Error should be nil")
+	require.NoError(t, err, "Error should be nil")
 	assert.NotNil(t, token, "Token should not be nil")
 	assert.Equal(t, "deadbeef", claims.UserId, "UserID should match")
 }
@@ -34,7 +35,7 @@ func TestLogin(t *testing.T) {
 
 	err := c.Login()
 
-	assert.NoError(t, err, "Error should be nil")
+	require.NoError(t, err, "Error should be nil")
 	assert.NotEmpty(t, c.Token, "Token should not be empty")
 }
 
@@ -45,7 +46,7 @@ func TestBadLogin(t *testing.T) {
 
 	err := c.Login()
 
-	assert.Error(t, err, "Error should not be nil")
+	require.Error(t, err, "Error should not be nil")
 	assert.Equal(t, "", c.Token, "Token should be empty")
 }
 
@@ -59,7 +60,7 @@ func TestGetStations(t *testing.T) {
 
 	resp, err := c.GetStations()
 
-	assert.NoError(t, err, "Error should be nil")
+	require.NoError(t, err, "Error should be nil")
 	assert.Len(t, resp, 1, "Response should have 1 station")
 	assert.Equal(t, "station1", resp[0].ID, "Station ID should match")
 	assert.Equal(t, "online", resp[0].Status, "Station Status should match")
@@ -74,14 +75,14 @@ func TestGetStation(t *testing.T) {
 	c.Token = "deadbeef"
 
 	resp, err := c.GetStation("station1")
-	assert.NoError(t, err, "Error should be nil")
+	require.NoError(t, err, "Error should be nil")
 	assert.Equal(t, "station1", resp.ID, "Station ID should match")
 
 	resp, err = c.GetStation("missing")
-	assert.NoError(t, err, "Error should be nil")
+	require.NoError(t, err, "Error should be nil")
 
 	resp, err = c.GetStation("errstation")
-	assert.NoError(t, err, "Error should be nil")
+	require.NoError(t, err, "Error should be nil")
 }
 
 func TestTransactionStats(t *testing.T) {
@@ -111,7 +112,7 @@ func TestTransactionStats(t *testing.T) {
 
 	resp, err := c.GetTransactionStatistics("station1")
 
-	assert.NoError(t, err, "Error should be nil")
+	require.NoError(t, err, "Error should be nil")
 	assert.Equal(t, statsResp.Sessions, resp.Sessions, "Sessions should match")
 	assert.Equal(t, statsResp.Duration, resp.Duration, "Duration should match")
 }
@@ -134,8 +135,8 @@ func TestTransactionPage(t *testing.T) {
 
 	resp, err := c.GetTransactions("station1", 2, 0)
 
-	assert.NoError(t, err, "Error should be nil")
-	assert.Equal(t, 2, len(resp), "Response should have 2 transactions")
+	require.NoError(t, err, "Error should be nil")
+	assert.Len(t, resp, 2, "Response should have 2 transactions")
 }
 
 func TestAllTransactions(t *testing.T) {
@@ -145,8 +146,8 @@ func TestAllTransactions(t *testing.T) {
 	c.PageSize = 2
 	resp, err := c.GetAllTransactions("station1")
 
-	assert.NoError(t, err, "Error should be nil")
-	assert.Equal(t, 4, len(resp), "Response should have 4 transactions")
+	require.NoError(t, err, "Error should be nil")
+	assert.Len(t, resp, 4, "Response should have 4 transactions")
 }
 
 func TestSingleTransaction(t *testing.T) {
@@ -155,7 +156,7 @@ func TestSingleTransaction(t *testing.T) {
 
 	resp, err := c.GetTransaction("transaction1")
 
-	assert.NoError(t, err, "Error should be nil")
+	require.NoError(t, err, "Error should be nil")
 	assert.Equal(t, "transaction1", resp.ID, "Transaction should have requested ID")
 }
 
