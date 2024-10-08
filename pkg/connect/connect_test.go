@@ -17,6 +17,16 @@ func TestConstruct(t *testing.T) {
 	assert.Equal(t, "myPassword", c.Password, "Password should be set")
 }
 
+func TestParseToken(t *testing.T) {
+	c := NewConnectAPI("myUser", "myPassword", "myHost")
+	c.Token = CreateToken(false)
+	token, claims, err := c.ParseToken()
+
+	assert.NoError(t, err, "Error should be nil")
+	assert.NotNil(t, token, "Token should not be nil")
+	assert.Equal(t, "deadbeef", claims.UserId, "UserID should match")
+}
+
 func TestLogin(t *testing.T) {
 	c := NewConnectAPI("myUser", "myPassword", "https://example.com")
 	httpmock.ActivateNonDefault(c.Client.GetClient())

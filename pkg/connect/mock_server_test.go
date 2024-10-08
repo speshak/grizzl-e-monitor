@@ -1,6 +1,7 @@
 package connect
 
 import (
+	"encoding/json"
 	"io"
 	"log"
 	"net/http"
@@ -54,6 +55,19 @@ func SetupHTTPMock() {
 		},
 	}
 
+	appVersion, _ := json.Marshal(ApplicationVersion{
+		Id:                    "65c5fc9d6664ff3bb4de7ada",
+		ApplicationName:       "Grizzl-E Connect",
+		IosLatestVersion:      "0.7.5",
+		IosMinimalVersion:     "0.7.0",
+		AndroidLatestVersion:  "0.7.5",
+		AndroidMinimalVersion: "0.7.0",
+	})
+
+	versionHeader := http.Header{
+		"X-Application-Version": []string{string(appVersion)},
+	}
+
 	httpmock.RegisterResponder("POST", "https://example.com/client/auth/login",
 		func(req *http.Request) (*http.Response, error) {
 			buf := new(strings.Builder)
@@ -87,7 +101,7 @@ func SetupHTTPMock() {
 	httpmock.RegisterResponder(
 		"GET",
 		"https://example.com/client/stations",
-		httpmock.NewJsonResponderOrPanic(200, stationListResp),
+		httpmock.NewJsonResponderOrPanic(200, stationListResp).HeaderAdd(versionHeader),
 	)
 
 	stationResp := Station{
@@ -98,16 +112,16 @@ func SetupHTTPMock() {
 	httpmock.RegisterResponder(
 		"GET",
 		"https://example.com/client/stations/station1",
-		httpmock.NewJsonResponderOrPanic(200, stationResp),
+		httpmock.NewJsonResponderOrPanic(200, stationResp).HeaderAdd(versionHeader),
 	)
 
 	// An station that returns an bad request
 	httpmock.RegisterResponder("GET", "https://example.com/client/stations/errstation",
-		httpmock.NewStringResponder(400, ""),
+		httpmock.NewStringResponder(400, "").HeaderAdd(versionHeader),
 	)
 
 	httpmock.RegisterResponder("GET", "https://example.com/client/stations/missing",
-		httpmock.NewStringResponder(404, ""),
+		httpmock.NewStringResponder(404, "").HeaderAdd(versionHeader),
 	)
 
 	transactionPage1 := GetTransactionsResponse{
@@ -148,7 +162,7 @@ func SetupHTTPMock() {
 			"limit":     "2",
 			"offset":    "0",
 		},
-		httpmock.NewJsonResponderOrPanic(200, transactionPage1),
+		httpmock.NewJsonResponderOrPanic(200, transactionPage1).HeaderAdd(versionHeader),
 	)
 
 	httpmock.RegisterResponderWithQuery(
@@ -159,7 +173,7 @@ func SetupHTTPMock() {
 			"limit":     "2",
 			"offset":    "1",
 		},
-		httpmock.NewJsonResponderOrPanic(200, transactionPage2),
+		httpmock.NewJsonResponderOrPanic(200, transactionPage2).HeaderAdd(versionHeader),
 	)
 
 	httpmock.RegisterResponderWithQuery(
@@ -170,14 +184,15 @@ func SetupHTTPMock() {
 			"limit":     "2",
 			"offset":    "2",
 		},
-		httpmock.NewJsonResponderOrPanic(200, transactionPage3),
+		httpmock.NewJsonResponderOrPanic(200, transactionPage3).HeaderAdd(versionHeader),
 	)
 
 	httpmock.RegisterResponder(
 		"GET",
 		"https://example.com/client/transactions/transaction1",
-		httpmock.NewJsonResponderOrPanic(200, Transaction{
-			ID: "transaction1",
-		}),
+		httpmock.NewJsonResponderOrPanic(200, GetTransactionResponse{
+			Transaction: Transaction{
+				ID: "transaction1",
+			}}).HeaderAdd(versionHeader),
 	)
 }

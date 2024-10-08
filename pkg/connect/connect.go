@@ -22,6 +22,7 @@ type ConnectAPI interface {
 	GetAllTransactions(stationId string) ([]Transaction, error)
 	GetTransactions(stationId string, limit int, offset int) ([]Transaction, error)
 	GetTransaction(id string) (Transaction, error)
+	ParseToken() (*jwt.Token, TokenClaims, error)
 }
 
 type ConnectAPIClient struct {
@@ -63,8 +64,7 @@ func (c *ConnectAPIClient) SetDebug() {
 	c.Client = c.Client.SetDebug(true)
 }
 
-// Ensure the login token is valid
-func (c *ConnectAPIClient) AssertValidToken() error {
+func (c *ConnectAPIClient) ParseToken() (*jwt.Token, TokenClaims, error) {
 	parser := jwt.NewParser()
 	claims := TokenClaims{}
 
@@ -74,10 +74,19 @@ func (c *ConnectAPIClient) AssertValidToken() error {
 	// We only care about the error if we have a token
 	if err != nil && c.Token != "" {
 		log.Printf("Error parsing token: %s", err)
-		log.Printf("Token: %s", c.Token)
 	}
 
-	if jwtToken == nil || !jwtToken.Valid || IsExpired(claims.ExpiresAt) {
+	return jwtToken, claims, err
+}
+
+// Ensure the login token is valid
+func (c *ConnectAPIClient) AssertValidToken() error {
+	jwtToken, claims, _ := c.ParseToken()
+
+	// It might make sense to check jwtToken.Valid() here, but becasue we don't
+	// have the HMAC key we can't verify the token, so we just check for
+	// expiration
+	if jwtToken == nil || IsExpired(claims.ExpiresAt) {
 		log.Println("No valid token, logging in")
 		err := c.Login()
 		if err != nil {
@@ -126,6 +135,10 @@ func (c *ConnectAPIClient) Login() error {
 		c.Token = result.Token
 		return nil
 	}
+
+	// The API response includes a X-Application-Version header that lists the
+	// compatible app versions In theory we could compare that against the
+	// version of the app we're emulating and emit a warning if they don't match
 
 	return fmt.Errorf("error logging in: %s", errorResult.Message.Message)
 }
@@ -233,7 +246,7 @@ func (c *ConnectAPIClient) GetTransactions(stationId string, limit int, offset i
 func (c *ConnectAPIClient) GetTransaction(id string) (Transaction, error) {
 	log.Printf("Getting transaction %s", id)
 	client := c.client()
-	result := Transaction{}
+	result := GetTransactionResponse{}
 
 	_, err := client.R().
 		SetResult(&result).
@@ -243,5 +256,5 @@ func (c *ConnectAPIClient) GetTransaction(id string) (Transaction, error) {
 		return Transaction{}, err
 	}
 
-	return result, nil
+	return result.Transaction, nil
 }

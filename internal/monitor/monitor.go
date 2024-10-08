@@ -1,10 +1,11 @@
 package monitor
 
 import (
+	"context"
 	"log"
 	"time"
 
-	"github.com/speshak/grizzl-e-prom/pkg/connect"
+	"github.com/speshak/grizzl-e-monitor/pkg/connect"
 )
 
 type StationMonitor struct {
@@ -29,24 +30,30 @@ func NewStationMonitor(config *Config) *StationMonitor {
 	}
 }
 
-func (m *StationMonitor) MonitorStations() error {
+func (m *StationMonitor) MonitorStations(ctx context.Context) error {
 	log.Printf("Monitoring stations")
 
 	for {
-		// Get the list of stations
-		stations, err := m.Connect.GetStations()
-		if err != nil {
-			log.Printf("Error getting stations: %v", err)
-			continue
-		}
+		select {
+		// Check if the context has been cancelled
+		case <-ctx.Done():
+			log.Println("Context cancelled, stopping monitoring")
+			return nil
+		default:
+			// Get the list of stations
+			stations, err := m.Connect.GetStations()
+			if err != nil {
+				return err
+			}
 
-		// Iterate over the stations
-		for _, station := range stations {
-			m.MonitorStation(station)
-		}
+			// Iterate over the stations
+			for _, station := range stations {
+				m.MonitorStation(station)
+			}
 
-		// Sleep for 5 minutes
-		time.Sleep(5 * time.Minute)
+			// Sleep for 5 minutes
+			time.Sleep(5 * time.Minute)
+		}
 	}
 }
 
@@ -95,7 +102,7 @@ func (m *StationMonitor) transactionHistory(station connect.Station) {
 	for _, transaction := range transactions {
 		// If we've already published the history, don't do it again
 		// This is up to the implementation of the TransactionHistoryPublisher to check.
-		if !m.TransactionHistoryPublisher.TransactionPublished(transaction.ID) {
+		if !m.TransactionHistoryPublisher.TransactionPublished(transaction) {
 			// The all transactions endpoint gets a subset of the transaction data, so we need to get the full transaction
 			fullTrans, err := m.Connect.GetTransaction(transaction.ID)
 

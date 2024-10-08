@@ -5,7 +5,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/speshak/grizzl-e-prom/pkg/connect"
+	"github.com/speshak/grizzl-e-monitor/pkg/connect"
 )
 
 type PrometheusPublisher struct {
@@ -106,4 +106,9 @@ func (p *PrometheusPublisher) PublishTransactionStats(stationId string, stats co
 	p.TotalDuration.With(labels).Set(float64(stats.Duration))
 	p.AveEnergy.With(labels).Set(stats.AverageEnergy)
 	p.TopSession.With(labels).Set(float64(stats.TopSession))
+}
+
+func (p *PrometheusPublisher) Close() error {
+	// Nothing to close for Prometheus
+	return nil
 }

@@ -14,15 +14,20 @@ The following environment variables can be used to configure the scraper:
   the Grizzl-E Connect API.
 - `GRIZZLE_CONNECT_API_PASSWORD`: The password to use when authenticating with
   the Grizzl-E Connect API.
-- `INFLUX_DB_HOST` - Hostname of Influx
-- `INFLUX_DB_KEY` - API key for Influx
+
+InfluxDB output can be enabled to defining the following
+- `INFLUX_HOST` - Hostname of Influx
+- `INFLUX_TOKEN` - API key for Influx
+- `INFLUX_BUCKET` - InfluxDB bucket name. Defaults to `default`
+- `INFLUX_ORG` - InfluxDB Organization name
+
 
 ## Running
 
 The easiest way to run the scraper is to use the docker image. Make sure to set the environment variables as needed.
 
 ```bash
-docker run -d -p 8080:8080 -e GRIZZLE_CONNECT_API_USERNAME=your-username -e GRIZZLE_CONNECT_API_PASSWORD=your-password ghcr.io/speshak/grizzl-e-prom:main
+docker run -d -p 8080:8080 -e GRIZZLE_CONNECT_API_USERNAME=your-username -e GRIZZLE_CONNECT_API_PASSWORD=your-password ghcr.io/speshak/grizzl-e-monitor:main
 ```
 
 ## API Client

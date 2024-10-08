@@ -1,4 +1,4 @@
-module github.com/speshak/grizzl-e-prom
+module github.com/speshak/grizzl-e-monitor
 
 require (
 	github.com/go-resty/resty/v2 v2.15.3

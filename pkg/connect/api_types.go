@@ -108,3 +108,19 @@ type TransactionStats struct {
 type GetTransactionsResponse struct {
 	Transactions []Transaction `json:"data"`
 }
+
+type GetTransactionResponse struct {
+	Transaction Transaction `json:"transaction"`
+}
+
+/**
+ * Contents of the X-Application-Version header
+ */
+type ApplicationVersion struct {
+	Id                    string `json:"_id"`
+	ApplicationName       string `json:"applicationName"`
+	IosLatestVersion      string `json:"iosLatestVersion"`
+	IosMinimalVersion     string `json:"iosMinimalVersion"`
+	AndroidLatestVersion  string `json:"androidLatestVersion"`
+	AndroidMinimalVersion string `json:"androidMinimalVersion"`
+}

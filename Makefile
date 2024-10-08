@@ -1,4 +1,4 @@
-APPNAME=grizzl-e-prom
+APPNAME=grizzl-e-monitor
 VERSION?=snapshot
 COMMIT=$(shell git rev-parse --verify HEAD)
 DATE?=$(shell date +%FT%T%z)
@@ -15,7 +15,7 @@ ifeq ($(RELEASE), 1)
 endif
 GO_LDFLAGS:=-ldflags="$(GO_LDFLAGS)"
 
-DOCKER_IMAGE=ghcr.io/speshak/grizzl-e-prom
+DOCKER_IMAGE=ghcr.io/speshak/grizzl-e-monitor
 
 # See: https://docs.docker.com/engine/reference/commandline/tag/#extended-description
 # A tag name must be valid ASCII and may contain lowercase and uppercase letters, digits, underscores, periods and dashes.
@@ -68,7 +68,7 @@ format:
 .PHONY: test
 test:
 	mkdir -p coverage
-	go test -v -race -coverprofile=coverage/cover.out ./pkg/... ./internal/...
+	go test -v -race -coverprofile=coverage/cover.out ./...
 
 coverage/cover.out:
 	$(MAKE) test
