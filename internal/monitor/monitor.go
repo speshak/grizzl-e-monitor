@@ -9,9 +9,11 @@ import (
 )
 
 type StationMonitor struct {
-	Config  *Config
-	Connect connect.ConnectAPI
+	Config   *Config
+	Connect  connect.ConnectAPI
+	Interval time.Duration
 
+	SingleStationMonitor        SingleStationMonitor
 	TransactionHistoryPublisher TransactionHistoryPublisher
 	TransactionStatsPublisher   TransactionStatsPublisher
 	StationStatusPublisher      StationStatusPublisher
@@ -24,10 +26,16 @@ func NewStationMonitor(config *Config) *StationMonitor {
 		connect.SetDebug()
 	}
 
-	return &StationMonitor{
-		Config:  config,
-		Connect: connect,
+	ret := StationMonitor{
+		Config:   config,
+		Connect:  connect,
+		Interval: 5 * time.Minute,
 	}
+
+	// Default we are are own SingleStationMonitor
+	ret.SingleStationMonitor = &ret
+
+	return &ret
 }
 
 func (m *StationMonitor) MonitorStations(ctx context.Context) error {
@@ -38,7 +46,7 @@ func (m *StationMonitor) MonitorStations(ctx context.Context) error {
 		// Check if the context has been cancelled
 		case <-ctx.Done():
 			log.Println("Context cancelled, stopping monitoring")
-			return nil
+			return ctx.Err()
 		default:
 			// Get the list of stations
 			stations, err := m.Connect.GetStations()
@@ -48,17 +56,17 @@ func (m *StationMonitor) MonitorStations(ctx context.Context) error {
 
 			// Iterate over the stations
 			for _, station := range stations {
-				m.MonitorStation(station)
+				m.SingleStationMonitor.MonitorStation(ctx, station)
 			}
 
-			// Sleep for 5 minutes
-			time.Sleep(5 * time.Minute)
+			// Sleep for the interval
+			time.Sleep(m.Interval)
 		}
 	}
 }
 
 // MonitorStation monitors a single station
-func (m *StationMonitor) MonitorStation(station connect.Station) {
+func (m *StationMonitor) MonitorStation(ctx context.Context, station connect.Station) {
 	// Current stats
 	m.stationStats(station)
 	m.transactionStats(station)

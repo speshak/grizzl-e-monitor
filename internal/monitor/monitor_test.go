@@ -1,11 +1,16 @@
 package monitor
 
 import (
+	"context"
+	"fmt"
 	"testing"
+	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/speshak/grizzl-e-monitor/pkg/connect"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
 // Create mocks for the ConnectAPI, TransactionHistoryPublisher, TransactionStatsPublisher, and StationStatusPublisher
@@ -103,11 +108,18 @@ func (m *MockStationStatusPublisher) Close() error {
 	return nil
 }
 
-/*
-func TestMonitorStations(t *testing.T) {
-	ctx, cancelCtx := context.WithCancel(context.Background())
+type MockSingleStationMonitor struct {
+	mock.Mock
+}
 
+func (m *MockSingleStationMonitor) MonitorStation(ctx context.Context, station connect.Station) {
+	m.Called(ctx, station)
+}
+
+func TestMonitorStations(t *testing.T) {
 	mockConnectAPI := new(MockConnectAPI)
+	ctx := context.Background()
+
 	// The first run is normal.
 	// The second call produces an empty list of stations to test that it is handled
 	// The third call produces an error which should halt the loop
@@ -115,26 +127,57 @@ func TestMonitorStations(t *testing.T) {
 	mockConnectAPI.On("GetStations").Return([]connect.Station{}, nil).Once()
 	mockConnectAPI.On("GetStations").Return([]connect.Station{}, fmt.Errorf("Error getting stations")).Once()
 
-	mockConnectAPI.On("GetStations").Run(func(args mock.Arguments) { cancelCtx() }).Return([]connect.Station{}, nil)
-
-	mockConnectAPI.On("GetStation", "station1").Return(connect.Station{ID: "station1"}, nil).Once()
-
-	mockConnectAPI.On("GetTransactionStatistics", "station1").Return(connect.TransactionStats{})
-
-	mockStationStatusPublisher := new(MockStationStatusPublisher)
-	mockStationStatusPublisher.On("PublishStationStatus", mock.Anything)
+	singleStationMonitor := new(MockSingleStationMonitor)
+	singleStationMonitor.On("MonitorStation", ctx, connect.Station{ID: "station1"})
 
 	monitor := &StationMonitor{
-		Connect:                mockConnectAPI,
-		StationStatusPublisher: mockStationStatusPublisher,
+		Connect:              mockConnectAPI,
+		SingleStationMonitor: singleStationMonitor,
+		Interval:             1 * time.Second,
 	}
 
 	err := monitor.MonitorStations(ctx)
-	assert.NoError(t, err)
+	require.ErrorContains(t, err, "Error getting stations")
 	mockConnectAPI.AssertExpectations(t)
-	mockStationStatusPublisher.AssertExpectations(t)
+	singleStationMonitor.AssertExpectations(t)
 }
-*/
+
+func TestMonitorStationsContextCancel(t *testing.T) {
+	ctx, cancelCtx := context.WithCancel(context.Background())
+
+	mockConnectAPI := new(MockConnectAPI)
+	// The first run is normal.
+	// The second call triggers a context cancel
+	mockConnectAPI.On("GetStations").Return([]connect.Station{{ID: "station1"}}, nil).Once()
+	mockConnectAPI.On("GetStations").Run(func(args mock.Arguments) { cancelCtx() }).Return([]connect.Station{}, nil)
+
+	singleStationMonitor := new(MockSingleStationMonitor)
+	singleStationMonitor.On("MonitorStation", ctx, connect.Station{ID: "station1"})
+
+	monitor := &StationMonitor{
+		Connect:              mockConnectAPI,
+		SingleStationMonitor: singleStationMonitor,
+		Interval:             1 * time.Second,
+	}
+
+	err := monitor.MonitorStations(ctx)
+
+	require.ErrorContains(t, err, "context canceled")
+	mockConnectAPI.AssertExpectations(t)
+	singleStationMonitor.AssertExpectations(t)
+}
+
+func TestMonitorConstructor(t *testing.T) {
+	monitor := NewStationMonitor(&Config{
+		APIHost:  "https://example.com",
+		Username: "myUser",
+		Password: "myPass",
+		Debug:    true,
+	})
+
+	assert.NotNil(t, monitor)
+	assert.NotNil(t, monitor.Connect)
+}
 
 func TestMonitorStation(t *testing.T) {
 	mockConnectAPI := new(MockConnectAPI)
@@ -161,7 +204,7 @@ func TestMonitorStation(t *testing.T) {
 	}
 
 	station := connect.Station{ID: "station1"}
-	monitor.MonitorStation(station)
+	monitor.MonitorStation(context.Background(), station)
 
 	mockConnectAPI.AssertExpectations(t)
 	mockTransactionHistoryPublisher.AssertExpectations(t)
