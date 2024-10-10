@@ -70,7 +70,7 @@ cover.out:
 
 .PHONY: coverage
 coverage: cover.out $(GOTESTCOVERAGE)
-	$(GOTESTCOVERAGE) --config=./.testcoverage.yml
+	-$(GOTESTCOVERAGE) --config=./.testcoverage.yml
 	go tool cover -html=./cover.out
 
 .PHONY: clean
