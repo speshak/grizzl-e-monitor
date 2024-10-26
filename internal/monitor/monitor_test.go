@@ -84,7 +84,7 @@ func (m *MockTransactionHistoryPublisher) TransactionPublished(transaction conne
 	return args.Bool(0)
 }
 
-func (m *MockTransactionHistoryPublisher) PublishTransactionHistory(stationID string, transaction connect.Transaction) {
+func (m *MockTransactionHistoryPublisher) PublishTransactionHistory(stationID string, transaction connect.Transaction) error {
 	m.Called(stationID, transaction)
 }
 

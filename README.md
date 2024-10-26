@@ -21,6 +21,11 @@ InfluxDB output can be enabled to defining the following
 - `INFLUX_BUCKET` - InfluxDB bucket name. Defaults to `default`
 - `INFLUX_ORG` - InfluxDB Organization name
 
+TimescaleDB output for transaction metrics can be enabled by defining:
+- `TIMESCALE_URL` - A DB URL for the PostgreSQL database.
+
+The database should be empty, go-migrate will be used to create the required
+tables during startup.
 
 ## Running
 

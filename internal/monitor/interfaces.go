@@ -16,7 +16,7 @@ type StationStatusPublisher interface {
 }
 
 type TransactionHistoryPublisher interface {
-	PublishTransactionHistory(stationId string, transaction connect.Transaction)
+	PublishTransactionHistory(stationId string, transaction connect.Transaction) error
 	TransactionPublished(transaction connect.Transaction) bool
 	Close() error
 }

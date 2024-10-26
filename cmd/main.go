@@ -11,6 +11,7 @@ import (
 	"github.com/speshak/grizzl-e-monitor/internal/influx"
 	"github.com/speshak/grizzl-e-monitor/internal/monitor"
 	"github.com/speshak/grizzl-e-monitor/internal/prometheus"
+	"github.com/speshak/grizzl-e-monitor/internal/timescale"
 )
 
 // Default values for paramters
@@ -19,7 +20,7 @@ const DefaultInfluxOrg = "default"
 const DefaultInfluxBucket = "default"
 
 // LoadConfig loads configuration from environment variables
-func LoadConfig() (*monitor.Config, *influx.InfluxConfig, error) {
+func LoadConfig() (*monitor.Config, *influx.InfluxConfig, *timescale.Config, error) {
 	apiHost := os.Getenv("GRIZZLE_CONNECT_API_URL")
 	if apiHost == "" {
 		apiHost = DefaultConnectApiHost
@@ -27,12 +28,12 @@ func LoadConfig() (*monitor.Config, *influx.InfluxConfig, error) {
 
 	username := os.Getenv("GRIZZLE_CONNECT_API_USERNAME")
 	if username == "" {
-		return nil, nil, fmt.Errorf("GRIZZLE_CONNECT_API_USERNAME environment variable is required")
+		return nil, nil, nil, fmt.Errorf("GRIZZLE_CONNECT_API_USERNAME environment variable is required")
 	}
 
 	password := os.Getenv("GRIZZLE_CONNECT_API_PASSWORD")
 	if password == "" {
-		return nil, nil, fmt.Errorf("GRIZZLE_CONNECT_API_PASSWORD environment variable is required")
+		return nil, nil, nil, fmt.Errorf("GRIZZLE_CONNECT_API_PASSWORD environment variable is required")
 	}
 
 	debug := os.Getenv("GRIZZLE_CONNECT_DEBUG")
@@ -47,13 +48,20 @@ func LoadConfig() (*monitor.Config, *influx.InfluxConfig, error) {
 		influxConfig = nil
 	}
 
+	timescaleConfig, err := LoadTimescaleConfig()
+	if err != nil {
+		log.Printf("Error loading TimescaleDB config: %v\n", err)
+		log.Println("TimescaleDB will not be used")
+		timescaleConfig = nil
+	}
+
 	return &monitor.Config{
 			APIHost:  apiHost,
 			Username: username,
 			Password: password,
 			Debug:    debug == "true",
 		},
-		influxConfig, nil
+		influxConfig, timescaleConfig, nil
 }
 
 func LoadInfluxConfig() (*influx.InfluxConfig, error) {
@@ -85,8 +93,20 @@ func LoadInfluxConfig() (*influx.InfluxConfig, error) {
 	}, nil
 }
 
+func LoadTimescaleConfig() (*timescale.Config, error) {
+	url := os.Getenv("TIMESCALE_URL")
+
+	if url == "" {
+		return nil, fmt.Errorf("TIMESCALE_URL environment variable is required")
+	}
+
+	return &timescale.Config{
+		Url: url,
+	}, nil
+}
+
 func main() {
-	config, influxConfig, err := LoadConfig()
+	config, influxConfig, timescaleConfig, err := LoadConfig()
 	if err != nil {
 		fmt.Printf("Error loading config: %v\n", err)
 		os.Exit(1)
@@ -100,6 +120,11 @@ func main() {
 	if influxConfig != nil {
 		influx := influx.NewInfluxPublisher(influxConfig)
 		monitor.TransactionHistoryPublisher = influx
+	}
+
+	if timescaleConfig != nil {
+		timescale := timescale.NewTimescalePublisher(timescaleConfig)
+		monitor.TransactionHistoryPublisher = timescale
 	}
 
 	monitor.TransactionStatsPublisher = prom

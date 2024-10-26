@@ -118,7 +118,11 @@ func (m *StationMonitor) transactionHistory(station connect.Station) {
 				log.Printf("Error getting full transaction %s: %v", transaction.ID, err)
 				continue
 			}
-			m.TransactionHistoryPublisher.PublishTransactionHistory(station.ID, fullTrans)
+			err = m.TransactionHistoryPublisher.PublishTransactionHistory(station.ID, fullTrans)
+
+			if err != nil {
+				log.Printf("Error publishing transaction history for transaction %s: %v", transaction.ID, err)
+			}
 		}
 	}
 }

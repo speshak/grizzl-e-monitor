@@ -1,0 +1,4 @@
+DROP TABLE IF EXISTS meter_values;
+DROP TABLE IF EXISTS transactions;
+
+DROP EXTENSION IF EXISTS timescaledb;

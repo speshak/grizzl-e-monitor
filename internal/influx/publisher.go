@@ -61,7 +61,7 @@ func (p *InfluxPublisher) TransactionPublished(transaction connect.Transaction) 
 	return false
 }
 
-func (p *InfluxPublisher) PublishTransactionHistory(stationId string, transaction connect.Transaction) {
+func (p *InfluxPublisher) PublishTransactionHistory(stationId string, transaction connect.Transaction) error {
 	log.Printf("Logging Transaction '%s' starting", transaction.ID)
 	log.Printf("%d data points to log", len(transaction.MeterValues.Date))
 
@@ -81,6 +81,8 @@ func (p *InfluxPublisher) PublishTransactionHistory(stationId string, transactio
 		writeApi.WritePoint(p)
 	}
 	log.Printf("Logging Transaction '%s' finished", transaction.ID)
+
+	return nil
 }
 
 func (p *InfluxPublisher) Close() error {
