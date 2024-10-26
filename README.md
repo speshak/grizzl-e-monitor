@@ -2,7 +2,7 @@
 
 This is a tool to monitor the Grizzl-E Connect API. It is designed to be run as
 a service and will scrape the Grizzl-E Connect API for the current status of
-your Grizzl-E charger and expose Prometheus metrics and push to InfluxDB.
+your Grizzl-E charger and expose Prometheus metrics and push to TimescaleDB.
 
 ## Configuration
 
@@ -14,12 +14,6 @@ The following environment variables can be used to configure the scraper:
   the Grizzl-E Connect API.
 - `GRIZZLE_CONNECT_API_PASSWORD`: The password to use when authenticating with
   the Grizzl-E Connect API.
-
-InfluxDB output can be enabled to defining the following
-- `INFLUX_HOST` - Hostname of Influx
-- `INFLUX_TOKEN` - API key for Influx
-- `INFLUX_BUCKET` - InfluxDB bucket name. Defaults to `default`
-- `INFLUX_ORG` - InfluxDB Organization name
 
 TimescaleDB output for transaction metrics can be enabled by defining:
 - `TIMESCALE_URL` - A DB URL for the PostgreSQL database.

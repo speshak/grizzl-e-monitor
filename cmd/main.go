@@ -8,7 +8,6 @@ import (
 	"os"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/speshak/grizzl-e-monitor/internal/influx"
 	"github.com/speshak/grizzl-e-monitor/internal/monitor"
 	"github.com/speshak/grizzl-e-monitor/internal/prometheus"
 	"github.com/speshak/grizzl-e-monitor/internal/timescale"
@@ -20,7 +19,7 @@ const DefaultInfluxOrg = "default"
 const DefaultInfluxBucket = "default"
 
 // LoadConfig loads configuration from environment variables
-func LoadConfig() (*monitor.Config, *influx.InfluxConfig, *timescale.Config, error) {
+func LoadConfig() (*monitor.Config, *timescale.Config, error) {
 	apiHost := os.Getenv("GRIZZLE_CONNECT_API_URL")
 	if apiHost == "" {
 		apiHost = DefaultConnectApiHost
@@ -28,24 +27,17 @@ func LoadConfig() (*monitor.Config, *influx.InfluxConfig, *timescale.Config, err
 
 	username := os.Getenv("GRIZZLE_CONNECT_API_USERNAME")
 	if username == "" {
-		return nil, nil, nil, fmt.Errorf("GRIZZLE_CONNECT_API_USERNAME environment variable is required")
+		return nil, nil, fmt.Errorf("GRIZZLE_CONNECT_API_USERNAME environment variable is required")
 	}
 
 	password := os.Getenv("GRIZZLE_CONNECT_API_PASSWORD")
 	if password == "" {
-		return nil, nil, nil, fmt.Errorf("GRIZZLE_CONNECT_API_PASSWORD environment variable is required")
+		return nil, nil, fmt.Errorf("GRIZZLE_CONNECT_API_PASSWORD environment variable is required")
 	}
 
 	debug := os.Getenv("GRIZZLE_CONNECT_DEBUG")
 	if debug == "" {
 		debug = "false"
-	}
-
-	influxConfig, err := LoadInfluxConfig()
-	if err != nil {
-		log.Printf("Error loading InfluxDB config: %v\n", err)
-		log.Println("InfluxDB will not be used")
-		influxConfig = nil
 	}
 
 	timescaleConfig, err := LoadTimescaleConfig()
@@ -61,36 +53,7 @@ func LoadConfig() (*monitor.Config, *influx.InfluxConfig, *timescale.Config, err
 			Password: password,
 			Debug:    debug == "true",
 		},
-		influxConfig, timescaleConfig, nil
-}
-
-func LoadInfluxConfig() (*influx.InfluxConfig, error) {
-	influxHost := os.Getenv("INFLUX_HOST")
-	if influxHost == "" {
-		influxHost = "http://localhost:8086"
-	}
-
-	influxToken := os.Getenv("INFLUX_TOKEN")
-	if influxToken == "" {
-		return nil, fmt.Errorf("INFLUX_TOKEN environment variable is required")
-	}
-
-	org := os.Getenv("INFLUX_ORG")
-	if org == "" {
-		org = DefaultInfluxOrg
-	}
-
-	bucket := os.Getenv("INFLUX_BUCKET")
-	if bucket == "" {
-		bucket = DefaultInfluxBucket
-	}
-
-	return &influx.InfluxConfig{
-		Host:   influxHost,
-		Token:  influxToken,
-		Org:    org,
-		Bucket: bucket,
-	}, nil
+		timescaleConfig, nil
 }
 
 func LoadTimescaleConfig() (*timescale.Config, error) {
@@ -106,7 +69,7 @@ func LoadTimescaleConfig() (*timescale.Config, error) {
 }
 
 func main() {
-	config, influxConfig, timescaleConfig, err := LoadConfig()
+	config, timescaleConfig, err := LoadConfig()
 	if err != nil {
 		fmt.Printf("Error loading config: %v\n", err)
 		os.Exit(1)
@@ -116,11 +79,6 @@ func main() {
 	monitor := monitor.NewStationMonitor(config)
 
 	prom := prometheus.NewPrometheusPublisher()
-
-	if influxConfig != nil {
-		influx := influx.NewInfluxPublisher(influxConfig)
-		monitor.TransactionHistoryPublisher = influx
-	}
 
 	if timescaleConfig != nil {
 		timescale := timescale.NewTimescalePublisher(timescaleConfig)
