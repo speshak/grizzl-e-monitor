@@ -111,6 +111,7 @@ func (m *StationMonitor) transactionHistory(station connect.Station) {
 		// If we've already published the history, don't do it again
 		// This is up to the implementation of the TransactionHistoryPublisher to check.
 		if !m.TransactionHistoryPublisher.TransactionPublished(transaction) {
+			log.Printf("Publishing transaction history for transaction %s", transaction.ID)
 			// The all transactions endpoint gets a subset of the transaction data, so we need to get the full transaction
 			fullTrans, err := m.Connect.GetTransaction(transaction.ID)
 
@@ -123,6 +124,8 @@ func (m *StationMonitor) transactionHistory(station connect.Station) {
 			if err != nil {
 				log.Printf("Error publishing transaction history for transaction %s: %v", transaction.ID, err)
 			}
+		} else {
+			log.Printf("Transaction %s already published", transaction.ID)
 		}
 	}
 }

@@ -172,8 +172,6 @@ func (t *TimescalePublisher) PublishTransactionHistory(stationId string, transac
 }
 
 func (t *TimescalePublisher) TransactionPublished(transaction connect.Transaction) bool {
-	log.Printf("Checking if transaction '%s' has been published", transaction.ID)
-
 	var count int
 	// An in-progress transaction will not have a stop time, so we will consider
 	// the transaction unpublished until the stop time is set
