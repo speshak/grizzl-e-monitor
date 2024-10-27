@@ -86,6 +86,7 @@ func (m *MockTransactionHistoryPublisher) TransactionPublished(transaction conne
 
 func (m *MockTransactionHistoryPublisher) PublishTransactionHistory(stationID string, transaction connect.Transaction) error {
 	m.Called(stationID, transaction)
+	return nil
 }
 
 type MockTransactionStatsPublisher struct {
@@ -288,4 +289,23 @@ func TestExistingTransactionHistory(t *testing.T) {
 
 	mockConnectAPI.AssertExpectations(t)
 	mockTransactionHistoryPublisher.AssertExpectations(t)
+}
+
+func TestTransactionStatsError(t *testing.T) {
+	mockConnectAPI := new(MockConnectAPI)
+	mockConnectAPI.On("GetTransactionStatistics", "station1").Return(connect.TransactionStats{}, fmt.Errorf("Error getting transaction statistics"))
+
+	mockTransactionStatsPublisher := new(MockTransactionStatsPublisher)
+	// No need to set expectations on the publisher since it should not be called
+
+	monitor := &StationMonitor{
+		Connect:                   mockConnectAPI,
+		TransactionStatsPublisher: mockTransactionStatsPublisher,
+	}
+
+	station := connect.Station{ID: "station1"}
+	monitor.transactionStats(station)
+
+	mockConnectAPI.AssertExpectations(t)
+	mockTransactionStatsPublisher.AssertExpectations(t)
 }
