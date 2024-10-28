@@ -25,6 +25,7 @@ type TimescalePublisher struct {
 var migrationsBox embed.FS
 
 func (t *TimescalePublisher) RunMigrations() error {
+	log.Printf("Running database migrations")
 	migrations, err := iofs.New(migrationsBox, "migrations")
 	if err != nil {
 		return err
@@ -51,6 +52,9 @@ func (t *TimescalePublisher) RunMigrations() error {
 	if err != nil && err != migrate.ErrNoChange {
 		return err
 	}
+
+	version, _, _ := m.Version()
+	log.Printf("Database version: %v", version)
 	return nil
 }
 
