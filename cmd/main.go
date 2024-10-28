@@ -4,10 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/speshak/grizzl-e-monitor/internal/monitor"
 	"github.com/speshak/grizzl-e-monitor/internal/prometheus"
 	"github.com/speshak/grizzl-e-monitor/internal/timescale"
@@ -99,7 +97,4 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// Expose /metrics HTTP endpoint using the created custom registry.
-	http.Handle("/metrics", promhttp.Handler())
-	log.Fatal(http.ListenAndServe(":8080", nil))
 }
