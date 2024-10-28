@@ -7,13 +7,14 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/speshak/grizzl-e-monitor/pkg/connect"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestRunMigrations(t *testing.T) {
 	t.Skip()
 	// Is this worth testing?
 	db, mock, err := sqlmock.New()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	defer db.Close()
 
 	config := &Config{Url: "postgres://user:password@localhost:5432/dbname?sslmode=disable"}
@@ -25,12 +26,12 @@ func TestRunMigrations(t *testing.T) {
 	mock.ExpectQuery("SELECT CURRENT_DATABASE()")
 
 	err = publisher.RunMigrations()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 func TestPublishTransactionHistory(t *testing.T) {
 	db, mock, err := sqlmock.New()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	defer db.Close()
 
 	config := &Config{Url: "postgres://user:password@localhost:5432/dbname?sslmode=disable"}
@@ -99,12 +100,12 @@ func TestPublishTransactionHistory(t *testing.T) {
 	).WillReturnResult(sqlmock.NewResult(1, 1))
 
 	err = publisher.PublishTransactionHistory("station1", transaction)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 func TestTransactionPublished(t *testing.T) {
 	db, mock, err := sqlmock.New()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	defer db.Close()
 
 	config := &Config{Url: "postgres://user:password@localhost:5432/dbname?sslmode=disable"}
@@ -125,7 +126,7 @@ func TestTransactionPublished(t *testing.T) {
 
 func TestClose(t *testing.T) {
 	db, mock, err := sqlmock.New()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	defer db.Close()
 
 	config := &Config{Url: "postgres://user:password@localhost:5432/dbname?sslmode=disable"}
@@ -137,6 +138,6 @@ func TestClose(t *testing.T) {
 	mock.ExpectClose()
 
 	err = publisher.Close()
-	assert.NoError(t, err)
-	assert.NoError(t, mock.ExpectationsWereMet())
+	require.NoError(t, err)
+	require.NoError(t, mock.ExpectationsWereMet())
 }
