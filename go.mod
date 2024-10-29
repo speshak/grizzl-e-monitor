@@ -6,7 +6,7 @@ require (
 	github.com/golang-migrate/migrate/v4 v4.18.1
 	github.com/jarcoal/httpmock v1.3.1
 	github.com/lib/pq v1.10.9
-	github.com/prometheus/client_golang v1.20.4
+	github.com/prometheus/client_golang v1.20.5
 	github.com/stretchr/testify v1.9.0
 )
 
