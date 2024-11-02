@@ -17,6 +17,12 @@ type StationMonitor struct {
 	TransactionHistoryPublisher TransactionHistoryPublisher
 	TransactionStatsPublisher   TransactionStatsPublisher
 	StationStatusPublisher      StationStatusPublisher
+
+	// Time periods for the different collection jobs
+	StationIntervalMin     time.Duration
+	StationIntervalMax     time.Duration
+	TransactionIntervalMin time.Duration
+	TransactionIntervalMax time.Duration
 }
 
 func NewStationMonitor(config *Config) *StationMonitor {
@@ -36,6 +42,12 @@ func NewStationMonitor(config *Config) *StationMonitor {
 		Config:    config,
 		Connect:   connect,
 		Scheduler: s,
+
+		// Set sensible default interval values
+		StationIntervalMin:     5 * time.Minute,
+		StationIntervalMax:     20 * time.Minute,
+		TransactionIntervalMin: 60 * time.Minute,
+		TransactionIntervalMax: 90 * time.Minute,
 	}
 
 	return &ret
@@ -80,7 +92,7 @@ func (m *StationMonitor) CreateJobsForStations() error {
 
 		// Stats
 		_, err := m.Scheduler.NewJob(
-			gocron.DurationRandomJob(time.Minute*5, time.Minute*20),
+			gocron.DurationRandomJob(m.StationIntervalMin, m.StationIntervalMax),
 			gocron.NewTask(
 				func() {
 					m.stationStats(station)
@@ -96,7 +108,7 @@ func (m *StationMonitor) CreateJobsForStations() error {
 
 		// Transactions
 		_, err = m.Scheduler.NewJob(
-			gocron.DurationRandomJob(time.Minute*60, time.Minute*90),
+			gocron.DurationRandomJob(m.TransactionIntervalMin, m.TransactionIntervalMax),
 			gocron.NewTask(
 				func() {
 					m.transactionHistory(station)
