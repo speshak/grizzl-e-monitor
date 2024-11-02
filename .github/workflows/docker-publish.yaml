@@ -36,6 +36,8 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          labels: |
+            maintainer=${{ github.actor }}
           tags: |
             type=sha
             type=ref,event=branch
