@@ -11,6 +11,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
+
+	gocronmocks "github.com/go-co-op/gocron/mocks/v2"
 )
 
 // Create mocks for the ConnectAPI, TransactionHistoryPublisher, TransactionStatsPublisher, and StationStatusPublisher
@@ -117,57 +120,6 @@ func (m *MockSingleStationMonitor) MonitorStation(ctx context.Context, station c
 	m.Called(ctx, station)
 }
 
-func TestMonitorStations(t *testing.T) {
-	mockConnectAPI := new(MockConnectAPI)
-	ctx := context.Background()
-
-	// The first run is normal.
-	// The second call produces an empty list of stations to test that it is handled
-	// The third call produces an error which should halt the loop
-	mockConnectAPI.On("GetStations").Return([]connect.Station{{ID: "station1"}}, nil).Once()
-	mockConnectAPI.On("GetStations").Return([]connect.Station{}, nil).Once()
-	mockConnectAPI.On("GetStations").Return([]connect.Station{}, fmt.Errorf("Error getting stations")).Once()
-
-	singleStationMonitor := new(MockSingleStationMonitor)
-	singleStationMonitor.On("MonitorStation", ctx, connect.Station{ID: "station1"})
-
-	monitor := &StationMonitor{
-		Connect:              mockConnectAPI,
-		SingleStationMonitor: singleStationMonitor,
-		Interval:             1 * time.Second,
-	}
-
-	err := monitor.MonitorStations(ctx)
-	require.ErrorContains(t, err, "Error getting stations")
-	mockConnectAPI.AssertExpectations(t)
-	singleStationMonitor.AssertExpectations(t)
-}
-
-func TestMonitorStationsContextCancel(t *testing.T) {
-	ctx, cancelCtx := context.WithCancel(context.Background())
-
-	mockConnectAPI := new(MockConnectAPI)
-	// The first run is normal.
-	// The second call triggers a context cancel
-	mockConnectAPI.On("GetStations").Return([]connect.Station{{ID: "station1"}}, nil).Once()
-	mockConnectAPI.On("GetStations").Run(func(args mock.Arguments) { cancelCtx() }).Return([]connect.Station{}, nil)
-
-	singleStationMonitor := new(MockSingleStationMonitor)
-	singleStationMonitor.On("MonitorStation", ctx, connect.Station{ID: "station1"})
-
-	monitor := &StationMonitor{
-		Connect:              mockConnectAPI,
-		SingleStationMonitor: singleStationMonitor,
-		Interval:             1 * time.Second,
-	}
-
-	err := monitor.MonitorStations(ctx)
-
-	require.ErrorContains(t, err, "context canceled")
-	mockConnectAPI.AssertExpectations(t)
-	singleStationMonitor.AssertExpectations(t)
-}
-
 func TestMonitorConstructor(t *testing.T) {
 	monitor := NewStationMonitor(&Config{
 		APIHost:  "https://example.com",
@@ -178,39 +130,6 @@ func TestMonitorConstructor(t *testing.T) {
 
 	assert.NotNil(t, monitor)
 	assert.NotNil(t, monitor.Connect)
-}
-
-func TestMonitorStation(t *testing.T) {
-	mockConnectAPI := new(MockConnectAPI)
-	mockConnectAPI.On("GetTransactionStatistics", "station1").Return(connect.TransactionStats{}, nil)
-	mockConnectAPI.On("GetStation", "station1").Return(connect.Station{ID: "station1"}, nil)
-	mockConnectAPI.On("GetAllTransactions", "station1").Return([]connect.Transaction{{ID: "trans1"}}, nil)
-	mockConnectAPI.On("GetTransaction", "trans1").Return(connect.Transaction{ID: "trans1"}, nil)
-
-	mockTransactionHistoryPublisher := new(MockTransactionHistoryPublisher)
-	mockTransactionHistoryPublisher.On("TransactionPublished", connect.Transaction{ID: "trans1"}).Return(false)
-	mockTransactionHistoryPublisher.On("PublishTransactionHistory", "station1", mock.Anything)
-
-	mockTransactionStatsPublisher := new(MockTransactionStatsPublisher)
-	mockTransactionStatsPublisher.On("PublishTransactionStats", "station1", mock.Anything)
-
-	mockStationStatusPublisher := new(MockStationStatusPublisher)
-	mockStationStatusPublisher.On("PublishStationStatus", mock.Anything)
-
-	monitor := &StationMonitor{
-		Connect:                     mockConnectAPI,
-		TransactionHistoryPublisher: mockTransactionHistoryPublisher,
-		TransactionStatsPublisher:   mockTransactionStatsPublisher,
-		StationStatusPublisher:      mockStationStatusPublisher,
-	}
-
-	station := connect.Station{ID: "station1"}
-	monitor.MonitorStation(context.Background(), station)
-
-	mockConnectAPI.AssertExpectations(t)
-	mockTransactionHistoryPublisher.AssertExpectations(t)
-	mockTransactionStatsPublisher.AssertExpectations(t)
-	mockStationStatusPublisher.AssertExpectations(t)
 }
 
 func TestTransactionStats(t *testing.T) {
@@ -308,4 +227,92 @@ func TestTransactionStatsError(t *testing.T) {
 
 	mockConnectAPI.AssertExpectations(t)
 	mockTransactionStatsPublisher.AssertExpectations(t)
+}
+func TestCreateJobsForStations(t *testing.T) {
+	mockConnectAPI := new(MockConnectAPI)
+	mockConnectAPI.On("GetStations").Return([]connect.Station{{ID: "station1"}, {ID: "station2"}}, nil)
+
+	mockTransactionStatsPublisher := new(MockTransactionStatsPublisher)
+	mockTransactionHistoryPublisher := new(MockTransactionHistoryPublisher)
+	mockStationStatusPublisher := new(MockStationStatusPublisher)
+
+	ctrl := gomock.NewController(t)
+	mockScheduler := gocronmocks.NewMockScheduler(ctrl)
+	mockScheduler.EXPECT().NewJob(gomock.Any(), gomock.Any(), gomock.Any()).Times(4)
+
+	monitor := &StationMonitor{
+		Connect:                     mockConnectAPI,
+		TransactionStatsPublisher:   mockTransactionStatsPublisher,
+		TransactionHistoryPublisher: mockTransactionHistoryPublisher,
+		StationStatusPublisher:      mockStationStatusPublisher,
+		Scheduler:                   mockScheduler,
+	}
+
+	err := monitor.CreateJobsForStations()
+	require.NoError(t, err)
+
+	mockConnectAPI.AssertExpectations(t)
+}
+
+func TestCreateJobsForStationsError(t *testing.T) {
+	mockConnectAPI := new(MockConnectAPI)
+	mockConnectAPI.On("GetStations").Return([]connect.Station{}, fmt.Errorf("Error getting stations"))
+
+	mockTransactionStatsPublisher := new(MockTransactionStatsPublisher)
+	mockTransactionHistoryPublisher := new(MockTransactionHistoryPublisher)
+	mockStationStatusPublisher := new(MockStationStatusPublisher)
+
+	ctrl := gomock.NewController(t)
+	mockScheduler := gocronmocks.NewMockScheduler(ctrl)
+
+	monitor := &StationMonitor{
+		Connect:                     mockConnectAPI,
+		TransactionStatsPublisher:   mockTransactionStatsPublisher,
+		TransactionHistoryPublisher: mockTransactionHistoryPublisher,
+		StationStatusPublisher:      mockStationStatusPublisher,
+		Scheduler:                   mockScheduler,
+	}
+
+	err := monitor.CreateJobsForStations()
+	require.Error(t, err)
+
+	mockConnectAPI.AssertExpectations(t)
+}
+
+func TestMonitorStations(t *testing.T) {
+	mockConnectAPI := new(MockConnectAPI)
+	mockConnectAPI.On("GetStations").Return([]connect.Station{{ID: "station1"}, {ID: "station2"}}, nil)
+
+	mockTransactionStatsPublisher := new(MockTransactionStatsPublisher)
+	mockTransactionHistoryPublisher := new(MockTransactionHistoryPublisher)
+	mockStationStatusPublisher := new(MockStationStatusPublisher)
+
+	ctx, cancelCtx := context.WithCancel(context.Background())
+
+	ctrl := gomock.NewController(t)
+	mockScheduler := gocronmocks.NewMockScheduler(ctrl)
+	mockScheduler.EXPECT().Start().Times(1)
+	mockScheduler.EXPECT().Shutdown().Times(1).Return(nil)
+	// Just accept any job creation, we're not testing that here
+	mockScheduler.EXPECT().NewJob(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+
+	monitor := &StationMonitor{
+		Connect:                     mockConnectAPI,
+		TransactionStatsPublisher:   mockTransactionStatsPublisher,
+		TransactionHistoryPublisher: mockTransactionHistoryPublisher,
+		StationStatusPublisher:      mockStationStatusPublisher,
+		Scheduler:                   mockScheduler,
+	}
+
+	// Set a timer to cancel the context. Otherwise this will continue
+	// indefinitely and fail when we hit the test timeout
+	go func() {
+		time.Sleep(1 * time.Second)
+		cancelCtx()
+	}()
+
+	err := monitor.MonitorStations(ctx)
+
+	require.EqualError(t, err, "context canceled")
+	mockConnectAPI.AssertExpectations(t)
 }

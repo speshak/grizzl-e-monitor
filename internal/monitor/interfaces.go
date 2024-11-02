@@ -1,8 +1,6 @@
 package monitor
 
 import (
-	"context"
-
 	"github.com/speshak/grizzl-e-monitor/pkg/connect"
 )
 
@@ -19,8 +17,4 @@ type TransactionHistoryPublisher interface {
 	PublishTransactionHistory(stationId string, transaction connect.Transaction) error
 	TransactionPublished(transaction connect.Transaction) bool
 	Close() error
-}
-
-type SingleStationMonitor interface {
-	MonitorStation(ctx context.Context, station connect.Station)
 }

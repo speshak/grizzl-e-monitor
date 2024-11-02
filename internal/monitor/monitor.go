@@ -5,18 +5,24 @@ import (
 	"log"
 	"time"
 
+	"github.com/go-co-op/gocron/v2"
 	"github.com/speshak/grizzl-e-monitor/pkg/connect"
 )
 
 type StationMonitor struct {
-	Config   *Config
-	Connect  connect.ConnectAPI
-	Interval time.Duration
+	Config    *Config
+	Connect   connect.ConnectAPI
+	Scheduler gocron.Scheduler
 
-	SingleStationMonitor        SingleStationMonitor
 	TransactionHistoryPublisher TransactionHistoryPublisher
 	TransactionStatsPublisher   TransactionStatsPublisher
 	StationStatusPublisher      StationStatusPublisher
+
+	// Time periods for the different collection jobs
+	StationIntervalMin     time.Duration
+	StationIntervalMax     time.Duration
+	TransactionIntervalMin time.Duration
+	TransactionIntervalMax time.Duration
 }
 
 func NewStationMonitor(config *Config) *StationMonitor {
@@ -26,14 +32,23 @@ func NewStationMonitor(config *Config) *StationMonitor {
 		connect.SetDebug()
 	}
 
-	ret := StationMonitor{
-		Config:   config,
-		Connect:  connect,
-		Interval: 5 * time.Minute,
+	s, err := gocron.NewScheduler()
+
+	if err != nil {
+		log.Fatalf("Error creating scheduler %v", err)
 	}
 
-	// Default we are are own SingleStationMonitor
-	ret.SingleStationMonitor = &ret
+	ret := StationMonitor{
+		Config:    config,
+		Connect:   connect,
+		Scheduler: s,
+
+		// Set sensible default interval values
+		StationIntervalMin:     5 * time.Minute,
+		StationIntervalMax:     20 * time.Minute,
+		TransactionIntervalMin: 60 * time.Minute,
+		TransactionIntervalMax: 90 * time.Minute,
+	}
 
 	return &ret
 }
@@ -41,38 +56,73 @@ func NewStationMonitor(config *Config) *StationMonitor {
 func (m *StationMonitor) MonitorStations(ctx context.Context) error {
 	log.Printf("Monitoring stations")
 
-	for {
-		select {
-		// Check if the context has been cancelled
-		case <-ctx.Done():
-			log.Println("Context cancelled, stopping monitoring")
-			return ctx.Err()
-		default:
-			// Get the list of stations
-			stations, err := m.Connect.GetStations()
-			if err != nil {
-				return err
-			}
+	// I've decided that station creation/removal is a rare event, so we'll just create the jobs once
+	// If someone changes the station configuration, they'll need to restart the monitor
 
-			// Iterate over the stations
-			for _, station := range stations {
-				m.SingleStationMonitor.MonitorStation(ctx, station)
-			}
-
-			// Sleep for the interval
-			time.Sleep(m.Interval)
-		}
+	err := m.CreateJobsForStations()
+	if err != nil {
+		return err
 	}
+
+	m.Scheduler.Start()
+
+	defer func() {
+		err := m.Scheduler.Shutdown()
+		log.Printf("Error shutting down scheduler: %v", err)
+	}()
+
+	// Check if the context has been cancelled
+	<-ctx.Done()
+	log.Println("Context cancelled, stopping monitoring")
+	return ctx.Err()
 }
 
-// MonitorStation monitors a single station
-func (m *StationMonitor) MonitorStation(ctx context.Context, station connect.Station) {
-	// Current stats
-	m.stationStats(station)
-	m.transactionStats(station)
+func (m *StationMonitor) CreateJobsForStations() error {
+	// Get the list of stations
+	stations, err := m.Connect.GetStations()
+	if err != nil {
+		return err
+	}
 
-	// Historical stats
-	m.transactionHistory(station)
+	log.Print("Creating monitor jobs for stations")
+
+	// Iterate over the stations
+	for _, station := range stations {
+		log.Printf("Creating monitor jobs for station %s", station.ID)
+
+		// Stats
+		_, err := m.Scheduler.NewJob(
+			gocron.DurationRandomJob(m.StationIntervalMin, m.StationIntervalMax),
+			gocron.NewTask(
+				func() {
+					m.stationStats(station)
+					m.transactionStats(station)
+				},
+			),
+			gocron.WithTags("station_stats"),
+		)
+
+		if err != nil {
+			return err
+		}
+
+		// Transactions
+		_, err = m.Scheduler.NewJob(
+			gocron.DurationRandomJob(m.TransactionIntervalMin, m.TransactionIntervalMax),
+			gocron.NewTask(
+				func() {
+					m.transactionHistory(station)
+				},
+			),
+			gocron.WithTags("transaction"),
+		)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // Get the station's transaction stats

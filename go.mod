@@ -1,6 +1,8 @@
 module github.com/speshak/grizzl-e-monitor
 
 require (
+	github.com/go-co-op/gocron/mocks/v2 v2.0.0-20241031210428-31de1e81082a
+	github.com/go-co-op/gocron/v2 v2.12.1
 	github.com/go-resty/resty/v2 v2.15.3
 	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/golang-migrate/migrate/v4 v4.18.1
@@ -8,9 +10,16 @@ require (
 	github.com/lib/pq v1.10.9
 	github.com/prometheus/client_golang v1.20.5
 	github.com/stretchr/testify v1.9.0
+	go.uber.org/mock v0.4.0
 )
 
-require github.com/kylelemons/godebug v1.1.0 // indirect
+require (
+	github.com/google/uuid v1.6.0 // indirect
+	github.com/jonboulle/clockwork v0.4.0 // indirect
+	github.com/kylelemons/godebug v1.1.0 // indirect
+	github.com/robfig/cron/v3 v3.0.1 // indirect
+	golang.org/x/exp v0.0.0-20240613232115-7f521ea00fb8 // indirect
+)
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
