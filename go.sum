@@ -31,6 +31,8 @@ github.com/go-co-op/gocron/mocks/v2 v2.0.0-20241125191624-c7c0a17f0572 h1:pM1Ato
 github.com/go-co-op/gocron/mocks/v2 v2.0.0-20241125191624-c7c0a17f0572/go.mod h1:vj1T7S+FUsDmY2m8EdkKt6F7IDjCpm1Ok7p4zBd+Z5w=
 github.com/go-co-op/gocron/mocks/v2 v2.0.0-20241206200644-d856be5a410c h1:ffLh+M/hkxNnKOrLUhQfl8zkNw105nqKFt5NuxGrjHY=
 github.com/go-co-op/gocron/mocks/v2 v2.0.0-20241206200644-d856be5a410c/go.mod h1:vj1T7S+FUsDmY2m8EdkKt6F7IDjCpm1Ok7p4zBd+Z5w=
+github.com/go-co-op/gocron/mocks/v2 v2.0.0-20241211164327-560a9dc9e43d h1:6Nm7wU2ywyrVl3NEvkCfcutDBJ48+GIY2QW5dKETKN8=
+github.com/go-co-op/gocron/mocks/v2 v2.0.0-20241211164327-560a9dc9e43d/go.mod h1:vj1T7S+FUsDmY2m8EdkKt6F7IDjCpm1Ok7p4zBd+Z5w=
 github.com/go-co-op/gocron/v2 v2.12.1 h1:dCIIBFbzhWKdgXeEifBjHPzgQ1hoWhjS4289Hjjy1uw=
 github.com/go-co-op/gocron/v2 v2.12.1/go.mod h1:xY7bJxGazKam1cz04EebrlP4S9q4iWdiAylMGP3jY9w=
 github.com/go-co-op/gocron/v2 v2.12.3 h1:3JkKjkFoAPp/i0YE+sonlF5gi+xnBChwYh75nX16MaE=
