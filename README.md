@@ -32,6 +32,6 @@ docker run -d -p 8080:8080 -e GRIZZLE_CONNECT_API_USERNAME=your-username -e GRIZ
 ## API Client
 
 There is an implementation of a grizzl-e connect API client in `pkg/connect`. The
-Connect service does not publish any API information so this client was built by
-capturing traffic from the iPadOS client app. It certainly is feature incomplete
-and could break in the future.
+Connect service does not publish any API information so this client was built
+by capturing traffic from the iPadOS client app. It certainly is *not* feature
+incomplete and could break in the future.
