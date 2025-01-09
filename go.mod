@@ -1,7 +1,7 @@
 module github.com/speshak/grizzl-e-monitor
 
 require (
-	github.com/go-co-op/gocron/mocks/v2 v2.0.0-20250103214757-abfd9e5dcc48
+	github.com/go-co-op/gocron/mocks/v2 v2.0.0-20250109012113-cc66c780d869
 	github.com/go-co-op/gocron/v2 v2.14.1
 	github.com/go-resty/resty/v2 v2.16.2
 	github.com/golang-jwt/jwt/v5 v5.2.1
