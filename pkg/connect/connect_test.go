@@ -1,10 +1,12 @@
 package connect
 
 import (
+	"fmt"
 	"net/http"
 	"testing"
 	"time"
 
+	"github.com/go-resty/resty/v2"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
@@ -106,6 +108,7 @@ func TestTransactionStats(t *testing.T) {
 			if err != nil {
 				return httpmock.NewStringResponse(500, ""), nil
 			}
+			resp.Header.Add("X-Application-Version", fmt.Sprintf(versionHeaderTemplate, EmulatedAppVersion[1:]))
 			return resp, nil
 		},
 	)
@@ -189,4 +192,42 @@ func TestSetDebug(t *testing.T) {
 	assert.False(t, c.Client.Debug, "Debug should be false")
 	c.SetDebug()
 	assert.True(t, c.Client.Debug, "Debug should be true")
+}
+
+func TestVersionCheckMiddleware(t *testing.T) {
+	// Missing version header
+	mockResponse := &resty.Response{
+		RawResponse: &http.Response{
+			Header: http.Header{},
+		},
+	}
+	res := VersionCheckMiddleware(nil, mockResponse)
+	require.Error(t, res, "Error should be returned")
+
+	// Malformed version header
+	mockResponse = &resty.Response{
+		RawResponse: &http.Response{
+			Header: http.Header{"X-Application-Version": []string{"bad"}},
+		},
+	}
+	res = VersionCheckMiddleware(nil, mockResponse)
+	require.Error(t, res, "Error should be returned")
+
+	// Unspupported version header
+	mockResponse = &resty.Response{
+		RawResponse: &http.Response{
+			Header: http.Header{"X-Application-Version": []string{versionHeaderTemplate}},
+		},
+	}
+	res = VersionCheckMiddleware(nil, mockResponse)
+	require.Error(t, res, "Error should be returned")
+
+	// Good version header
+	mockResponse = &resty.Response{
+		RawResponse: &http.Response{
+			Header: http.Header{"X-Application-Version": []string{fmt.Sprintf(versionHeaderTemplate, EmulatedAppVersion[1:])}},
+		},
+	}
+	res = VersionCheckMiddleware(nil, mockResponse)
+	require.NoError(t, res, "API version should be supported")
 }

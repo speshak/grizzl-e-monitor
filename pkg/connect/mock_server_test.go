@@ -88,6 +88,8 @@ func SetupHTTPMock() {
 			if err != nil {
 				return httpmock.NewStringResponse(500, ""), nil
 			}
+
+			resp.Header.Add("X-Application-Version", string(appVersion))
 			return resp, nil
 		},
 	)
