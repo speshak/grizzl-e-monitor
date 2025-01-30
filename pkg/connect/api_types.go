@@ -52,7 +52,7 @@ type Transaction struct {
 	IdTag            string      `json:"idTag"`
 	ConnectorId      int         `json:"connectorId"`
 	StartAt          string      `json:"startAt"`
-	Duration         int         `json:"duration"`
+	Duration         float64     `json:"duration"`
 	Energy           int         `json:"energy"`
 	Status           int         `json:"status"`
 	Power            int         `json:"power"`
@@ -64,7 +64,7 @@ type Transaction struct {
 	StopAt           string      `json:"stopAt"`
 	StopReason       string      `json:"stopReason"`
 	AverageCurrent   float64     `json:"averageCurrent"`
-	ChargingDuration int         `json:"chargingDuration"`
+	ChargingDuration float64     `json:"chargingDuration"`
 	MeterValues      MeterValues `json:"meterValues"`
 }
 
