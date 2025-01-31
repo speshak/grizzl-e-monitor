@@ -2,8 +2,11 @@
 linters:
   enable:
     - errcheck
+    - goconst
+    - gocritic
     - gosimple
     - govet
+    - iface
     - ineffassign
     - staticcheck
     - testifylint

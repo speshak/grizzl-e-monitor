@@ -13,6 +13,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const fakeToken = "deadbeef"
+
 func TestConstruct(t *testing.T) {
 	c := NewConnectAPI("myUser", "myPassword", "myHost")
 
@@ -27,7 +29,7 @@ func TestParseToken(t *testing.T) {
 
 	require.NoError(t, err, "Error should be nil")
 	assert.NotNil(t, token, "Token should not be nil")
-	assert.Equal(t, "deadbeef", claims.UserId, "UserID should match")
+	assert.Equal(t, fakeToken, claims.UserId, "UserID should match")
 }
 
 func TestLogin(t *testing.T) {
@@ -58,7 +60,7 @@ func TestGetStations(t *testing.T) {
 	SetupHTTPMock()
 
 	// Fake token
-	c.Token = "deadbeef"
+	c.Token = fakeToken
 
 	resp, err := c.GetStations()
 
@@ -74,7 +76,7 @@ func TestGetStation(t *testing.T) {
 	SetupHTTPMock()
 
 	// Fake token
-	c.Token = "deadbeef"
+	c.Token = fakeToken
 
 	resp, err := c.GetStation("station1")
 	require.NoError(t, err, "Error should be nil")
