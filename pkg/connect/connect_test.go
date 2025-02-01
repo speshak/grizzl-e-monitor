@@ -1,15 +1,19 @@
 package connect
 
 import (
+	"fmt"
 	"net/http"
 	"testing"
 	"time"
 
+	"github.com/go-resty/resty/v2"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+const fakeToken = "deadbeef"
 
 func TestConstruct(t *testing.T) {
 	c := NewConnectAPI("myUser", "myPassword", "myHost")
@@ -25,7 +29,7 @@ func TestParseToken(t *testing.T) {
 
 	require.NoError(t, err, "Error should be nil")
 	assert.NotNil(t, token, "Token should not be nil")
-	assert.Equal(t, "deadbeef", claims.UserId, "UserID should match")
+	assert.Equal(t, fakeToken, claims.UserId, "UserID should match")
 }
 
 func TestLogin(t *testing.T) {
@@ -56,7 +60,7 @@ func TestGetStations(t *testing.T) {
 	SetupHTTPMock()
 
 	// Fake token
-	c.Token = "deadbeef"
+	c.Token = fakeToken
 
 	resp, err := c.GetStations()
 
@@ -72,7 +76,7 @@ func TestGetStation(t *testing.T) {
 	SetupHTTPMock()
 
 	// Fake token
-	c.Token = "deadbeef"
+	c.Token = fakeToken
 
 	resp, err := c.GetStation("station1")
 	require.NoError(t, err, "Error should be nil")
@@ -106,6 +110,7 @@ func TestTransactionStats(t *testing.T) {
 			if err != nil {
 				return httpmock.NewStringResponse(500, ""), nil
 			}
+			resp.Header.Add("X-Application-Version", fmt.Sprintf(versionHeaderTemplate, EmulatedAppVersion[1:]))
 			return resp, nil
 		},
 	)
@@ -189,4 +194,42 @@ func TestSetDebug(t *testing.T) {
 	assert.False(t, c.Client.Debug, "Debug should be false")
 	c.SetDebug()
 	assert.True(t, c.Client.Debug, "Debug should be true")
+}
+
+func TestVersionCheckMiddleware(t *testing.T) {
+	// Missing version header
+	mockResponse := &resty.Response{
+		RawResponse: &http.Response{
+			Header: http.Header{},
+		},
+	}
+	res := VersionCheckMiddleware(nil, mockResponse)
+	require.Error(t, res, "Error should be returned")
+
+	// Malformed version header
+	mockResponse = &resty.Response{
+		RawResponse: &http.Response{
+			Header: http.Header{"X-Application-Version": []string{"bad"}},
+		},
+	}
+	res = VersionCheckMiddleware(nil, mockResponse)
+	require.Error(t, res, "Error should be returned")
+
+	// Unspupported version header
+	mockResponse = &resty.Response{
+		RawResponse: &http.Response{
+			Header: http.Header{"X-Application-Version": []string{versionHeaderTemplate}},
+		},
+	}
+	res = VersionCheckMiddleware(nil, mockResponse)
+	require.Error(t, res, "Error should be returned")
+
+	// Good version header
+	mockResponse = &resty.Response{
+		RawResponse: &http.Response{
+			Header: http.Header{"X-Application-Version": []string{fmt.Sprintf(versionHeaderTemplate, EmulatedAppVersion[1:])}},
+		},
+	}
+	res = VersionCheckMiddleware(nil, mockResponse)
+	require.NoError(t, res, "API version should be supported")
 }

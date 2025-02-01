@@ -46,9 +46,9 @@ func NewConnectAPI(username, password, host string) *ConnectAPIClient {
 		EnableTrace().
 		SetBaseURL(host).
 		SetHeader("Content-Type", "application/json").
-		SetHeader("User-Agent", "GrizzlEConnect/87 CFNetwork/1568.100.1 Darwin/24.0.0").
-		SetHeader("x-app-client", "Apple, iPad14,3, iPadOS 18.0").
-		SetHeader("x-app-version", "v0.8.0 (87)").
+		SetHeader("User-Agent", "GrizzlEConnect/105 CFNetwork/3826.400.120 Darwin/24.3.0").
+		SetHeader("x-app-client", "Apple, iPad14,3, iPadOS 18.3").
+		SetHeader("x-app-version", "v0.9.1 (105)").
 		SetHeader("x-application-name", "Grizzl-E Connect")
 
 	return &ConnectAPIClient{
@@ -113,7 +113,22 @@ func (c *ConnectAPIClient) client() (*resty.Client, error) {
 	}
 
 	return c.Client.
-		SetAuthToken(c.Token), nil
+		SetAuthToken(c.Token).
+		OnAfterResponse(VersionCheckMiddleware), nil
+}
+
+/**
+ * Resty middleware to check the API version in the response headers against the
+ * version we're emulating. Wired into the client in the client() function.
+ */
+func VersionCheckMiddleware(c *resty.Client, r *resty.Response) error {
+	header := r.Header().Get("X-Application-Version")
+
+	if header == "" {
+		return fmt.Errorf("missing X-Application-Version header")
+	}
+
+	return AssertApiSupported(header)
 }
 
 func (c *ConnectAPIClient) Login() error {
@@ -139,10 +154,6 @@ func (c *ConnectAPIClient) Login() error {
 		c.Token = result.Token
 		return nil
 	}
-
-	// The API response includes a X-Application-Version header that lists the
-	// compatible app versions In theory we could compare that against the
-	// version of the app we're emulating and emit a warning if they don't match
 
 	return fmt.Errorf("error logging in: %s", errorResult.Message.Message)
 }
