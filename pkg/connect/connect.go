@@ -174,6 +174,7 @@ func (c *ConnectAPIClient) GetStations() ([]Station, error) {
 
 	_, err = client.R().
 		SetResult(&result).
+		SetQueryParam("includeShared", "true").
 		Get("/client/stations")
 
 	if err != nil {
