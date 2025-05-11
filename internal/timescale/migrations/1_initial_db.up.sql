@@ -4,23 +4,23 @@ CREATE TABLE transactions (
     id VARCHAR(25) PRIMARY KEY,
 	duration INTERVAL,
 	station VARCHAR(26),
-	startAt TIMESTAMPTZ, 
+	startAt TIMESTAMPTZ,
 	stopAt TIMESTAMPTZ,
-	status INTEGER, 
+	status INTEGER,
 	power INTEGER,
 	currency VARCHAR(3),
 	priceKW DOUBLE PRECISION,
 	priceTotal DOUBLE PRECISION,
 	meterStart INTEGER,
 	meterStop INTEGER,
-	stopReason VARCHAR(255), 
+	stopReason VARCHAR(255),
 	averageCurrent DOUBLE PRECISION,
 	chargingDuration INTEGER
 );
 
 CREATE TABLE meter_values (
     date TIMESTAMPTZ NOT NULL,
-    transaction_id VARCHAR(25) REFERENCES transactions, 
+    transaction_id VARCHAR(25) REFERENCES transactions,
 	currentImport DOUBLE PRECISION,
 	currentOffered DOUBLE PRECISION,
 	energyActiveImportRegister INTEGER,
