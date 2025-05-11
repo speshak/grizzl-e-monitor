@@ -1,17 +1,28 @@
----
+version: "2"
 linters:
   enable:
-    - errcheck
     - goconst
     - gocritic
-    - gosimple
-    - govet
     - iface
-    - ineffassign
-    - staticcheck
     - testifylint
-    - unused
-
-linters-settings:
-  testifylint:
-    enable-all: true
+  settings:
+    testifylint:
+      enable-all: true
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

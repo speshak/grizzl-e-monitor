@@ -25,6 +25,9 @@ type User struct {
 	Phone     string `json:"phone"`
 	Language  string `json:"language"`
 	ID        string `json:"id"`
+	CreatedAt string `json:"createdAt,omitempty"`
+	Role      string `json:"role,omitempty"`
+	Password  string `json:"password,omitempty"` // It's unclear what this is for. Some responses include what looks like a hashed password, but it's not used in the API.
 }
 
 // A login response from the Connect API
@@ -48,6 +51,7 @@ type MeterValues struct {
 type Transaction struct {
 	ID               string      `json:"_id"`
 	User             string      `json:"user"`
+	SharedUser       User        `json:"sharedUser"`
 	Station          string      `json:"station"`
 	IdTag            string      `json:"idTag"`
 	ConnectorId      int         `json:"connectorId"`

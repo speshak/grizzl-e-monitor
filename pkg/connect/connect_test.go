@@ -51,7 +51,7 @@ func TestBadLogin(t *testing.T) {
 	err := c.Login()
 
 	require.Error(t, err, "Error should not be nil")
-	assert.Equal(t, "", c.Token, "Token should be empty")
+	assert.Empty(t, c.Token, "Token should be empty")
 }
 
 func TestGetStations(t *testing.T) {

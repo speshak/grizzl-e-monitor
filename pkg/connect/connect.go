@@ -46,9 +46,9 @@ func NewConnectAPI(username, password, host string) *ConnectAPIClient {
 		EnableTrace().
 		SetBaseURL(host).
 		SetHeader("Content-Type", "application/json").
-		SetHeader("User-Agent", "GrizzlEConnect/105 CFNetwork/3826.400.120 Darwin/24.3.0").
-		SetHeader("x-app-client", "Apple, iPad14,3, iPadOS 18.3").
-		SetHeader("x-app-version", "v0.9.1 (105)").
+		SetHeader("User-Agent", "GrizzlEConnect/115 CFNetwork/3826.500.111.2.2 Darwin/24.4.0").
+		SetHeader("x-app-client", "Apple, iPad14,3, iPadOS 18.4.1").
+		SetHeader("x-app-version", "v0.9.2 (115)").
 		SetHeader("x-application-name", "Grizzl-E Connect")
 
 	return &ConnectAPIClient{
@@ -174,6 +174,7 @@ func (c *ConnectAPIClient) GetStations() ([]Station, error) {
 
 	_, err = client.R().
 		SetResult(&result).
+		SetQueryParam("includeShared", "true").
 		Get("/client/stations")
 
 	if err != nil {
