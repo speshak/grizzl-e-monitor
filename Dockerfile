@@ -11,7 +11,7 @@ RUN make build
 
 
 # Create runtime image
-FROM alpine:3.21
+FROM alpine:3.22
 COPY --from=build /app/build/grizzl-e-monitor /bin/grizzl-e-monitor
 
 EXPOSE 8080
