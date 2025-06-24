@@ -1,5 +1,5 @@
 APPNAME=grizzl-e-monitor
-VERSION?=snapshot
+VERSION=$(shell git describe --tags --always --dirty)
 COMMIT=$(shell git rev-parse --verify HEAD)
 DATE?=$(shell date +%FT%T%z)
 RELEASE?=0
