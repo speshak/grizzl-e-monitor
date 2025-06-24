@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/speshak/grizzl-e-monitor/internal/monitor"
 	"github.com/speshak/grizzl-e-monitor/internal/prometheus"
@@ -15,6 +16,11 @@ import (
 const DefaultConnectApiHost = "https://connect-api.unitedchargers.com"
 const DefaultInfluxOrg = "default"
 const DefaultInfluxBucket = "default"
+
+// Build information, set at compile time
+var buildDate string
+var buildVersion string
+var buildCommit string
 
 // LoadConfig loads configuration from environment variables
 func LoadConfig() (*monitor.Config, *timescale.Config, error) {
@@ -66,7 +72,19 @@ func LoadTimescaleConfig() (*timescale.Config, error) {
 	}, nil
 }
 
+func versionHeader() {
+	const headerWidth = 80
+	fmt.Println(strings.Repeat("=", headerWidth))
+	fmt.Println("Grizzl-E Monitor")
+	fmt.Println("Version: " + buildVersion)
+	fmt.Println("Build Date: " + buildDate)
+	fmt.Println("Build commit: " + buildCommit)
+	fmt.Println(strings.Repeat("=", headerWidth))
+}
+
 func main() {
+	versionHeader()
+
 	config, timescaleConfig, err := LoadConfig()
 	if err != nil {
 		fmt.Printf("Error loading config: %v\n", err)
