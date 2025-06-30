@@ -46,8 +46,8 @@ func NewConnectAPI(username, password, host string) *ConnectAPIClient {
 		EnableTrace().
 		SetBaseURL(host).
 		SetHeader("Content-Type", "application/json").
-		SetHeader("User-Agent", "GrizzlEConnect/115 CFNetwork/3826.500.111.2.2 Darwin/24.4.0").
-		SetHeader("x-app-client", "Apple, iPad14,3, iPadOS 18.4.1").
+		SetHeader("User-Agent", "GrizzlEConnect/115 CFNetwork/3826.500.131 Darwin/24.5.0").
+		SetHeader("x-app-client", "Apple, iPad14,3, iPadOS 18.5").
 		SetHeader("x-app-version", "v0.9.2 (115)").
 		SetHeader("x-application-name", "Grizzl-E Connect")
 
