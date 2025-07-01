@@ -6,9 +6,8 @@ WORKDIR /app
 # Copies everything from your root directory into /app
 COPY . .
 
-RUN apk add --no-cache make
-RUN make build
-
+RUN apk add --no-cache make git && \
+    make build
 
 # Create runtime image
 FROM alpine:3.22
