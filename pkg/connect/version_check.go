@@ -18,7 +18,7 @@ import (
 
 // The version of the app that was used when capturing traffic to reverse
 // engineer the API.
-const EmulatedAppVersion = "v0.9.1"
+const EmulatedAppVersion = "v0.9.2"
 
 /* JSON structure of the X-Application-Version header */
 type AppVersion struct {
