@@ -59,7 +59,7 @@ type Transaction struct {
 	Duration         float64     `json:"duration"`
 	Energy           int         `json:"energy"`
 	Status           int         `json:"status"`
-	Power            int         `json:"power"`
+	Power            float64     `json:"power"`
 	Currency         string      `json:"currency"`
 	PriceKW          float64     `json:"priceKW"`
 	PriceTotal       float64     `json:"priceTotal"`
