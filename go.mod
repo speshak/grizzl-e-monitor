@@ -4,7 +4,7 @@ require (
 	github.com/go-co-op/gocron/mocks/v2 v2.0.0-20250721172836-fcfcb87056b4
 	github.com/go-co-op/gocron/v2 v2.16.3
 	github.com/go-resty/resty/v2 v2.16.5
-	github.com/golang-jwt/jwt/v5 v5.2.3
+	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/golang-migrate/migrate/v4 v4.18.3
 	github.com/jarcoal/httpmock v1.4.0
 	github.com/lib/pq v1.10.9
