@@ -10,7 +10,7 @@ RUN apk add --no-cache make git && \
     make build
 
 # Create runtime image
-FROM alpine:3.22
+FROM alpine:3.23
 COPY --from=build /app/build/grizzl-e-monitor /bin/grizzl-e-monitor
 
 EXPOSE 8080
